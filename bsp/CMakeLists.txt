@@ -11,6 +11,7 @@ add_library(freewili2_bsp STATIC
     leds/led_color.c
     leds/ws2812_driver.c
     leds/led_ui.c
+    gfx/palette.c
     third_party/segger_rtt/SEGGER_RTT.c
     third_party/segger_rtt/SEGGER_RTT_printf.c)
 

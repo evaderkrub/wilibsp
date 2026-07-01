@@ -116,18 +116,14 @@ there's no pin for it, and `FwDisplayVibe.md`'s claim that "reset is shared
 with the display [touch controller]" refers to this same hardware-only
 reset line, not a GPIO the firmware toggles.
 
-## gfx/palette carry (incomplete harvest)
+## gfx/palette carry (complete)
 
 `bsp/leds/led_ui.c`'s `led_spectrum_map()` depends on `bsp/gfx/palette.h`
-(`inferno_rgb565()`). Only the **header** `bsp/gfx/palette.h` is present in
-this repo — `bsp/gfx/palette.c` was not harvested (source:
-`subghz/src/gfx/palette.c`). `bsp/CMakeLists.txt` does not currently compile
-`leds/led_ui.c`'s dependency chain against a real `inferno_rgb565`
-implementation. Current v1 apps (`apps/template`, `apps/hello_display`) do
-not call `led_ui_*` / `led_spectrum_map`, so this gap doesn't block anything
-today — but the next agent who wires up `led_ui_spectrum()` or similar must
-also copy `subghz/src/gfx/palette.c` into `bsp/gfx/palette.c` and add it to
-`bsp/CMakeLists.txt`'s source list.
+(`inferno_rgb565()`). Both the header and the implementation
+(`bsp/gfx/palette.c`, harvested verbatim from `subghz/src/gfx/palette.c`) are
+now present and compiled into `freewili2_bsp` via `bsp/CMakeLists.txt`'s
+source list. `led_ui.c` / `led_spectrum_map()` link cleanly against the real
+`inferno_rgb565` implementation — no further harvesting needed.
 
 ## WS2812 first-frame latch (refresh the LEDs)
 

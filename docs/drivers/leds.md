@@ -10,13 +10,11 @@ the driver-chip level, handled inside `ws2812_driver.c`.
 `docs/hardware/facts.md` (`FwDisplayVibe.md` says 7 and is wrong).
 
 `bsp/leds/led_ui.{c,h}` layers a higher-level "signal indicator" API
-(breathing fade, spectrum-to-LED mapping) on top, but its
-`led_spectrum_map()` depends on `bsp/gfx/palette.h`'s `inferno_rgb565()`,
-whose `.c` implementation has **not** been harvested into this repo yet
-(only the header exists). Don't call `led_ui_spectrum()` /
-`led_spectrum_map()` until `bsp/gfx/palette.c` is added and wired into
-`bsp/CMakeLists.txt` — the current v1 apps avoid it entirely and use the
-lower-level `ws2812_*` API directly.
+(breathing fade, spectrum-to-LED mapping) on top, backed by
+`bsp/gfx/palette.h`'s `inferno_rgb565()`. The `.c` implementation
+(`bsp/gfx/palette.c`) is harvested and wired into `bsp/CMakeLists.txt`, so
+`led_ui_spectrum()` / `led_spectrum_map()` are usable — the current v1 apps
+still avoid it and use the lower-level `ws2812_*` API directly.
 
 **How to use it (low-level `ws2812_*` API, as used by `hello_display`):**
 
