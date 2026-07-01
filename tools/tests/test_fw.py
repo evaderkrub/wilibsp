@@ -51,7 +51,9 @@ def test_test_command_configures_and_runs_ctest():
 
 def test_flash_command_programs_correct_elf():
     cmd = fw.flash_command("hello_display")
-    assert cmd[0] == "openocd"
+    # cmd[0] is a discovered openocd exe (pico-sdk install path or bare "openocd")
+    assert "openocd" in cmd[0].lower()
+    assert "-f" in cmd and fw.OPENOCD_CFG in cmd
     program_arg = cmd[-1]
     assert "build/apps/hello_display/hello_display.elf" in program_arg
     assert "verify" in program_arg
@@ -59,9 +61,10 @@ def test_flash_command_programs_correct_elf():
 
 def test_rtt_command_sets_up_and_serves_rtt():
     cmd = fw.rtt_command()
-    assert cmd[0] == "openocd"
+    assert "openocd" in cmd[0].lower()
+    assert "-f" in cmd and fw.OPENOCD_CFG in cmd
     assert any("rtt setup" in c for c in cmd)
-    assert any("rtt server start" in c for c in cmd)
+    assert any(f"rtt server start {fw.RTT_PORT}" in c for c in cmd)
 
 def test_main_print_dispatches_build_command(capsys):
     fw.main(["build", "--print"])
