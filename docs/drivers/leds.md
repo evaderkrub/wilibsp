@@ -32,8 +32,24 @@ int main(void) {
     rgb_t green = { .r = 0, .g = 255, .b = 0 };
     ws2812_fill(green);
     ws2812_show();
+
+    for (;;) {
+        // ... app work ...
+        ws2812_show();   // refresh periodically — see the note below
+    }
 }
 ```
+
+**Important — refresh the LEDs, don't `show()` once and stop.** The **first**
+`ws2812_show()` data frame after the PIO state machine starts does **not**
+reliably latch all pixels — typically only pixel 0 lights, the rest stay dark.
+A subsequent `ws2812_show()` latches the whole strip. This is a known WS2812
+behavior on this board (verified on hardware 2026-07-01), **not** a driver bug —
+the driver is byte-for-byte the proven `sensorview`/`wilidispval` implementation.
+Real apps redraw their LED state every frame, so they never notice it. If your
+app sets the LEDs once and then does other work, call `ws2812_show()` again
+periodically (e.g. every ~250 ms in the main loop). `apps/hello_display/main.c`
+does exactly this. See `docs/hardware/facts.md` → "WS2812 first-frame latch".
 
 **Key APIs** (`bsp/leds/ws2812_driver.h`): `ws2812_init(PIO pio, uint sm,
 uint gpio)`, `ws2812_set_pixel(uint i, rgb_t c)`, `ws2812_fill(rgb_t c)`,

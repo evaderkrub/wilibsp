@@ -129,6 +129,24 @@ today — but the next agent who wires up `led_ui_spectrum()` or similar must
 also copy `subghz/src/gfx/palette.c` into `bsp/gfx/palette.c` and add it to
 `bsp/CMakeLists.txt`'s source list.
 
+## WS2812 first-frame latch (refresh the LEDs)
+
+The **first** `ws2812_show()` transmission after the `pio1` state machine starts
+does not reliably latch all 16 LEDs — in practice only pixel 0 (the data-in end
+of the chain) lights and the other 15 stay dark. A **second** `ws2812_show()`
+(any subsequent frame) latches the full strip. Verified on hardware 2026-07-01.
+
+This is **not** a driver defect: `bsp/leds/ws2812_driver.c` and `ws2812.pio` are
+functionally identical to the proven `sensorview` and `wilidispval`
+implementations (confirmed by diff — only whitespace/comment/include differ). It
+is a WS2812 timing/startup quirk on this board.
+
+**How to handle it:** refresh the LED state periodically instead of calling
+`ws2812_show()` exactly once. Real apps redraw every frame and never notice.
+`apps/hello_display/main.c` re-issues `ws2812_show()` every ~250 ms from its main
+loop; the symptom was originally seen because an earlier version showed the LEDs
+once during setup and then sat in a touch-only loop that never refreshed them.
+
 ## Host tests are a standalone CMake project
 
 `tests/` is configured and built as its **own** CMake project (no Pico SDK,
@@ -142,9 +160,18 @@ today is `target` (for on-device builds).
 
 ## Hardware verification status
 
-Task 9 (on-hardware smoke test of `hello_display`) has **not** run yet as of
-this writing. Everything above is verified against source code
-(`bsp/platform/board.h`, `bsp/platform/board.c`, `bsp/leds/ws2812_driver.h`,
-etc.), not against an oscilloscope or a running board. Treat behavioral
-claims (e.g. "the LCD lights up", "touch reports coordinates") as design
-intent pending that hardware pass.
+The `hello_display` on-hardware smoke test **passed on 2026-07-01** (RP2350 rev 3,
+programmed + verified over the cmsis-dap probe). Confirmed live on the board:
+
+- **Display (ST7796 + DMA):** panel lights, backlight on, "TOUCH THE SCREEN"
+  text renders.
+- **Touch (FT6336U):** chip detected over I2C (`ft6336: init ok id=0x64` via RTT);
+  taps register and draw dots at the correct coordinates.
+- **LEDs (WS2812 ×16):** all 16 light green (after applying the periodic-refresh
+  fix — see "WS2812 first-frame latch" above).
+- **Platform:** boots at 250 MHz (`hello_display up: sys=250000 kHz` via RTT),
+  ioexp init OK, RTT diagnostics working (control block found at `0x200045d0`).
+
+Peripherals still marked TODO in `docs/hardware/catalog.md` (radio, NFC, IR, DVI,
+audio, PDM mics, buttons, PIO-USB, I2C sensors) remain unverified — their driver
+harvest is future work.
