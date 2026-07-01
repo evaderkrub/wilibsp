@@ -8,6 +8,6 @@
 #include "platform/board.h"   // (Task 3)
 #include "display/st7796.h" // (Task 4)
 #include "input/ft6336.h"   // (Task 5)
-// #include "leds/ws2812_driver.h" // (Task 6)
+#include "leds/ws2812_driver.h" // (Task 6)
 
 #endif // FW2_H
