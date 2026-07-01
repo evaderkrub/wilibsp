@@ -24,7 +24,7 @@ int main(void) {
     uint16_t x, y;
     for (;;) {
         if (ft6336_poll(&x, &y)) {
-            st7796_fill_rect(x - 4, y - 4, 8, 8, 0xE0FF /* red-ish BE */);
+            st7796_fill_rect(x - 4, y - 4, 8, 8, 0x00F8 /* red: RGB565 0xF800 byte-swapped to wire order */);
             DIAG("touch %u,%u\n", x, y);
         }
     }
