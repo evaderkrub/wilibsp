@@ -32,12 +32,22 @@ def test_build_command_uses_target_preset():
 
 def test_test_command_configures_and_runs_ctest():
     cmds = fw.test_command()
-    assert cmds[0][:2] == ["cmake", "--preset"]
-    assert cmds[-1][0] == "ctest"
-    # host-test preset must actually be used for the configure step
-    assert "host-test" in cmds[0]
-    # and there must be a build step that builds the host-test preset
-    assert ["cmake", "--build", "--preset", "host-test"] in cmds
+    # Standalone tests/ tree: configured directly into build-tests/, no
+    # Pico-SDK-coupled preset involved (fw test works without the SDK).
+    configure = cmds[0]
+    assert configure[:2] == ["cmake", "-S"]
+    assert str(fw.REPO_ROOT / "tests") in configure
+    assert "-B" in configure
+    assert str(fw.REPO_ROOT / "build-tests") in configure[configure.index("-B") + 1]
+
+    build = cmds[1]
+    assert build[:2] == ["cmake", "--build"]
+    assert str(fw.REPO_ROOT / "build-tests") in build
+
+    ctest = cmds[-1]
+    assert ctest[0] == "ctest"
+    assert "--test-dir" in ctest
+    assert str(fw.REPO_ROOT / "build-tests") in ctest[ctest.index("--test-dir") + 1]
 
 def test_flash_command_programs_correct_elf():
     cmd = fw.flash_command("hello_display")
