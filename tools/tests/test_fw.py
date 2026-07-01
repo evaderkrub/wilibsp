@@ -34,3 +34,26 @@ def test_test_command_configures_and_runs_ctest():
     cmds = fw.test_command()
     assert cmds[0][:2] == ["cmake", "--preset"]
     assert cmds[-1][0] == "ctest"
+    # host-test preset must actually be used for the configure step
+    assert "host-test" in cmds[0]
+    # and there must be a build step that builds the host-test preset
+    assert ["cmake", "--build", "--preset", "host-test"] in cmds
+
+def test_flash_command_programs_correct_elf():
+    cmd = fw.flash_command("hello_display")
+    assert cmd[0] == "openocd"
+    program_arg = cmd[-1]
+    assert "build/apps/hello_display/hello_display.elf" in program_arg
+    assert "verify" in program_arg
+    assert "reset" in program_arg
+
+def test_rtt_command_sets_up_and_serves_rtt():
+    cmd = fw.rtt_command()
+    assert cmd[0] == "openocd"
+    assert any("rtt setup" in c for c in cmd)
+    assert any("rtt server start" in c for c in cmd)
+
+def test_main_print_dispatches_build_command(capsys):
+    fw.main(["build", "--print"])
+    captured = capsys.readouterr()
+    assert "cmake --build --preset target --target hello_display" in captured.out
