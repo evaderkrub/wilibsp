@@ -1,0 +1,24 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": { "major": 3, "minor": 21, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "target",
+      "displayName": "FreeWili2 target (RP2350B)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "RelWithDebInfo" }
+    },
+    {
+      "name": "host-test",
+      "displayName": "Host unit tests",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-tests",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "HOST_TEST": "ON" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "target", "configurePreset": "target" },
+    { "name": "host-test", "configurePreset": "host-test" }
+  ]
+}
