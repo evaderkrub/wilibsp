@@ -6,6 +6,8 @@ add_library(freewili2_bsp STATIC
     platform/spi_bus.c
     display/st7796.c
     display/font5x7.c
+    input/ft6336.c
+    input/ft6336_map.c
     third_party/segger_rtt/SEGGER_RTT.c
     third_party/segger_rtt/SEGGER_RTT_printf.c)
 
