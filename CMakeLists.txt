@@ -13,5 +13,4 @@ pico_sdk_init()
 add_subdirectory(bsp)
 
 # Each app opts in; add new apps here.
-# TODO(Task 8): create apps/hello_display, then uncomment.
-# add_subdirectory(apps/hello_display)
+add_subdirectory(apps/hello_display)
