@@ -15,6 +15,7 @@ add_library(freewili2_bsp STATIC
     audio/vu_meter.c
     audio/codec_nau88c10.c
     audio/audio_i2s_duplex.c
+    audio/audio_capture.c
     gfx/palette.c
     third_party/segger_rtt/SEGGER_RTT.c
     third_party/segger_rtt/SEGGER_RTT_printf.c)

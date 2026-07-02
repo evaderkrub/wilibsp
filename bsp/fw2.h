@@ -13,5 +13,6 @@
 #include "audio/vu_meter.h"          // (Task 1)
 #include "audio/codec_nau88c10.h"    // (Task 2)
 #include "audio/audio_i2s_duplex.h"  // (Task 2)
+#include "audio/audio_capture.h"     // (Task 3)
 
 #endif // FW2_H
