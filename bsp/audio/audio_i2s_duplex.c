@@ -1,4 +1,4 @@
-// src/audio/audio_i2s_duplex.c — full-duplex I2S: PIO0 SM0 clocks the codec and
+// bsp/audio/audio_i2s_duplex.c — full-duplex I2S: PIO0 SM0 clocks the codec and
 // both shifts the DAC out (GPIO5) and the ADC in (GPIO4). Tone playback is a
 // zero-CPU DMA read-ring over a pre-filled buffer (two channels chained; the ring
 // wraps the read address so no IRQ/re-arm is needed and the loop is seamless).

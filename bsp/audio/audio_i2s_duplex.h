@@ -1,4 +1,4 @@
-// src/audio/audio_i2s_duplex.h — full-duplex I2S on PIO0 SM0 (DAC out GPIO5, ADC in GPIO4).
+// bsp/audio/audio_i2s_duplex.h — full-duplex I2S on PIO0 SM0 (DAC out GPIO5, ADC in GPIO4).
 #ifndef AUDIO_I2S_DUPLEX_H
 #define AUDIO_I2S_DUPLEX_H
 #include <stdint.h>
@@ -9,7 +9,7 @@
 // the TX FIFO outputs 0 (DAC mid-scale silence) until play_loop() is armed.
 void audio_i2s_duplex_init(uint32_t sample_rate);
 
-// RX FIFO plumbing for vu_capture (same shape as the old RX driver).
+// RX FIFO plumbing for audio_capture (same shape as the old RX driver).
 volatile const void *audio_i2s_duplex_rxf(void);
 uint audio_i2s_duplex_rx_dreq(void);
 

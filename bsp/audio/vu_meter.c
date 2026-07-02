@@ -1,4 +1,4 @@
-// src/audio/vu_meter.c — pure VU-meter math. No hardware, no I/O.
+// bsp/audio/vu_meter.c — pure VU-meter math. No hardware, no I/O.
 #include "audio/vu_meter.h"
 #include <math.h>
 

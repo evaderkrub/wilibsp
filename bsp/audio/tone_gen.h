@@ -1,4 +1,4 @@
-// src/audio/tone_gen.h — pure sine sample generator for the codec tone source.
+// bsp/audio/tone_gen.h — pure sine sample generator for the codec tone source.
 #ifndef TONE_GEN_H
 #define TONE_GEN_H
 #include <stdint.h>

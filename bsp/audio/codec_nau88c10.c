@@ -1,4 +1,4 @@
-// src/audio/codec_nau88c10.c — register sequence vendored from the proven FW2
+// bsp/audio/codec_nau88c10.c — register sequence vendored from the proven FW2
 // driver (rpAudioCodecnau88c10.cpp). One change: reg 0x07 SMPLR = 16 kHz
 // (vendor ran 8 kHz = 0x000a). Codec is an I2S slave clocked MCLK-direct
 // (reg 0x06 = 0x0000): we must supply MCLK = 256*fs (PWM, see audio_i2s.c).
@@ -34,7 +34,7 @@ void codec_nau88c10_init(void) {
     codec_write(0x03, 0x00ED);
     // Audio control: 16-bit, slave, MCLK direct. AIFMT = LEFT-JUSTIFIED (0x08),
     // not I2S-standard (0x10): I2S-standard delays the MSB one BCLK after LRCK,
-    // but our RX PIO (i2s_rx.pio) samples 16 bits starting AT the LRCK edge.
+    // but our RX PIO (i2s_duplex.pio) samples 16 bits starting AT the LRCK edge.
     // Left-justified puts the MSB on that first BCLK so the captured word aligns
     // (else every sample reads as real>>1 and the mic rails at full scale).
     codec_write(0x04, 0x0008);
@@ -43,7 +43,7 @@ void codec_nau88c10_init(void) {
     codec_write(0x07, 0x0006);   // SMPLR = 16 kHz (vendor 8 kHz was 0x000a)
     codec_write(0x08, 0x0000);
     codec_write(0x09, 0x0000);
-    codec_write(0x0a, 0x0040);   // start DAC soft-muted; audio_stream_go() unmutes
+    codec_write(0x0a, 0x0040);   // start DAC soft-muted; codec_nau88c10_dac_mute(false) unmutes
     codec_write(0x0b, 0x00ff);   // DAC volume full scale
     codec_write(0x0c, 0x0000);
     codec_write(0x0d, 0x0000);

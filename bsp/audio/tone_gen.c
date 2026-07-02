@@ -1,4 +1,4 @@
-// src/audio/tone_gen.c — vendored from microphonearray/src/codec/tone_gen.c.
+// bsp/audio/tone_gen.c — vendored from microphonearray/src/codec/tone_gen.c.
 // Pure sine generator. The first sample is taken at a half-step phase offset so
 // the sample grid is centered on the sine: one full period then shows both of its
 // zero crossings inside the window rather than pinning sample 0 exactly to zero

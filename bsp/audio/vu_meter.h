@@ -1,4 +1,4 @@
-// src/audio/vu_meter.h — pure VU-meter math (no hardware deps; host-testable).
+// bsp/audio/vu_meter.h — pure VU-meter math (no hardware deps; host-testable).
 #ifndef VU_METER_H
 #define VU_METER_H
 #include <stdint.h>

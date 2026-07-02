@@ -1,4 +1,4 @@
-// src/audio/codec_nau88c10.h — NAU88C10 codec bring-up over I2C1.
+// bsp/audio/codec_nau88c10.h — NAU88C10 codec bring-up over I2C1.
 #ifndef CODEC_NAU88C10_H
 #define CODEC_NAU88C10_H
 
