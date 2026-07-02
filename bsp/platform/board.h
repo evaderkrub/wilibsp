@@ -28,6 +28,13 @@
 #define PIN_I2C1_SDA   26
 #define PIN_I2C1_SCL   27
 
+// --- I2S audio (NAU88C10 codec; pins from FW2Display_pin_definitions.h) ---
+#define PIN_AUDIO_DATA 5    // SPK_DIN:  I2S data into codec (PIO out / DAC)
+#define PIN_AUDIO_DIN  4    // SPK_DOUT: codec ADC data into MCU (PIO in)
+#define PIN_AUDIO_LRCK 6    // SPK_LRCK: I2S word clock  (PIO sideset bit 0)
+#define PIN_AUDIO_BCLK 7    // SPK_BCLK: I2S bit clock   (PIO sideset bit 1)
+#define PIN_AUDIO_MCLK 22   // SPK_MCLK: 256*fs square wave from PWM
+
 // --- External PSRAM (APS6404L 8MB) on the QSPI/QMI second chip select ---
 // GPIO47 = XIP_CS1n (function 9), NOT on SPI1. Brought up + memory-mapped in Plan 4.
 #define PIN_PSRAM_CS   47

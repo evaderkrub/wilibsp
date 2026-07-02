@@ -1,0 +1,28 @@
+; src/audio/i2s_duplex.pio — full-duplex I2S, MCU supplies all clocks (codec=slave).
+; 16 bits/channel, MSB first, 32-bit frame [L16|R16]. side-set bit0=LRCK, bit1=BCLK.
+; OUT pin = SPK_DIN (GPIO5, DAC), IN pin = SPK_DOUT (GPIO4, ADC).
+; Per counted bit: out on BCLK-low, sample (in) on BCLK-high (rising edge), count on
+; BCLK-low -> 3 PIO instr/bit, 1 BCLK pulse/bit, 32 bits/frame => PIO clock = 96*fs.
+;
+; ALIGNMENT KNOB (bring-up risk, same as the proven RX program): if RX peaks stay at
+; the floor while the mic is driven, move the `in pins,1` to the other BCLK phase, or
+; flip MIC_I2S_SLOT in vu_capture.c, or swap the 0b00/0b01 channel side values.
+.program i2s_duplex
+.side_set 2
+
+.wrap_target
+    set x, 14            side 0b00   ; LEFT: LRCK=0, BCLK=0
+left_bit:
+    out pins, 1          side 0b00   ; BCLK low: present DAC bit
+    in pins, 1           side 0b10   ; BCLK high: latch ADC bit (rising edge)
+    jmp x-- left_bit     side 0b00   ; BCLK low: advance
+    out pins, 1          side 0b00   ; 16th DAC bit (left)
+    in pins, 1           side 0b10   ; 16th ADC bit (left)
+    set x, 14            side 0b01   ; RIGHT: LRCK=1, BCLK=0
+right_bit:
+    out pins, 1          side 0b01
+    in pins, 1           side 0b11   ; BCLK high, LRCK high: sample
+    jmp x-- right_bit    side 0b01
+    out pins, 1          side 0b01   ; 16th DAC bit (right)
+    in pins, 1           side 0b11   ; 16th ADC bit (right)
+.wrap

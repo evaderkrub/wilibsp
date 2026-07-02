@@ -11,6 +11,10 @@ add_library(freewili2_bsp STATIC
     leds/led_color.c
     leds/ws2812_driver.c
     leds/led_ui.c
+    audio/tone_gen.c
+    audio/vu_meter.c
+    audio/codec_nau88c10.c
+    audio/audio_i2s_duplex.c
     gfx/palette.c
     third_party/segger_rtt/SEGGER_RTT.c
     third_party/segger_rtt/SEGGER_RTT_printf.c)
@@ -26,8 +30,13 @@ target_link_libraries(freewili2_bsp PUBLIC
     hardware_dma
     hardware_pio
     hardware_clocks
-    hardware_vreg)
+    hardware_vreg
+    hardware_pwm)
 
 # Generate the WS2812 PIO header into the build tree for ws2812_driver.c.
 pico_generate_pio_header(freewili2_bsp
     ${CMAKE_CURRENT_SOURCE_DIR}/leds/ws2812.pio)
+
+# Generate the I2S full-duplex PIO header into the build tree for audio_i2s_duplex.c.
+pico_generate_pio_header(freewili2_bsp
+    ${CMAKE_CURRENT_SOURCE_DIR}/audio/i2s_duplex.pio)
