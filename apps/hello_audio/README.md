@@ -1,0 +1,1 @@
+I2S full-duplex audio smoke test. `fw build hello_audio && fw flash hello_audio`, then `fw rtt`. Plays a 1 kHz tone (cycling SILENCE → onboard SPEAKER → 3.5 mm JACK) while capturing the codec mic; expect `CODEC OK`, a live mic VU bar, and a continuous RTT `vu:` stream.

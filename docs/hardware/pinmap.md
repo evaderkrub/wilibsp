@@ -26,6 +26,11 @@ against `board.h` again once that peripheral gets a driver, since
 | `PIN_I2C1_SDA` | 26 | I2C1 SDA | Touch (FT6336) + sensors, 400 kHz |
 | `PIN_I2C1_SCL` | 27 | I2C1 SCL | Touch (FT6336) + sensors, 400 kHz |
 | `PIN_PSRAM_CS` | 47 | APS6404L PSRAM chip-select | GPIO47 = XIP_CS1n (function 9), NOT on SPI1 |
+| `PIN_AUDIO_DIN`  | 4  | I2S ADC data (SPK_DOUT, codec -> MCU) | PIO0 in; mic capture |
+| `PIN_AUDIO_DATA` | 5  | I2S DAC data (SPK_DIN, MCU -> codec)  | PIO0 out; playback |
+| `PIN_AUDIO_LRCK` | 6  | I2S word clock (SPK_LRCK)             | PIO sideset bit 0 |
+| `PIN_AUDIO_BCLK` | 7  | I2S bit clock (SPK_BCLK)              | PIO sideset bit 1 |
+| `PIN_AUDIO_MCLK` | 22 | Codec master clock (SPK_MCLK)         | 256*fs square wave (PWM) |
 
 SPI1 baud rates (shared bus, from `board.h`): LCD 100 MHz
 (`LCD_SPI_BAUD`, divider-limited by `clk_peri`), CC1101 5 MHz
@@ -55,11 +60,6 @@ once each one gets a driver** — do not assume `FwDisplayVibe.md` is exact
 | DVI_D1_P | 17 | HSTX DVI | TODO |
 | DVI_D2_N | 18 | HSTX DVI | TODO |
 | DVI_D2_P | 19 | HSTX DVI | TODO |
-| SPK_DOUT | 4 | I2S audio (NAU88C10YG) | TODO |
-| SPK_DIN | 5 | I2S audio (NAU88C10YG) | TODO |
-| SPK_LRCK | 6 | I2S audio (NAU88C10YG) | TODO |
-| SPK_BCLK | 7 | I2S audio (NAU88C10YG) | TODO |
-| MCLK | 22 | I2S audio master clock | TODO |
 | Haptic motor | 46 | Haptic driver | TODO |
 | Buttons TX | 38 | 14-button serial coprocessor (UART out) | TODO |
 | Buttons RX | 39 | 14-button serial coprocessor (UART in) | TODO |

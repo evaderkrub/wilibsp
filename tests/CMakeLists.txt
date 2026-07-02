@@ -14,3 +14,21 @@ target_include_directories(test_led_color PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../bsp
     ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME led_color COMMAND test_led_color)
+
+add_executable(test_tone_gen
+    test_tone_gen.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp/audio/tone_gen.c)
+target_include_directories(test_tone_gen PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp
+    ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(test_tone_gen m)
+add_test(NAME tone_gen COMMAND test_tone_gen)
+
+add_executable(test_vu_meter
+    test_vu_meter.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp/audio/vu_meter.c)
+target_include_directories(test_vu_meter PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp
+    ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(test_vu_meter m)
+add_test(NAME vu_meter COMMAND test_vu_meter)

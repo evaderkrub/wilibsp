@@ -14,3 +14,4 @@ add_subdirectory(bsp)
 
 # Each app opts in; add new apps here.
 add_subdirectory(apps/hello_display)
+add_subdirectory(apps/hello_audio)
