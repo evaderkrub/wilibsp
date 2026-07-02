@@ -21,6 +21,14 @@ bool audio_capture_block_ready(void);
 
 // Pointer to the most-recently-completed block: AUDIO_CAPTURE_BLOCK_FRAMES frames
 // of uint32 [L16|R16]. Clears the ready flag. Returns NULL if no block is ready.
+//
+// LIFETIME: the returned pointer aliases one of two live DMA ping-pong buffers.
+// The consumer must finish reading (or copy the block out) within roughly one
+// block period — AUDIO_CAPTURE_BLOCK_FRAMES / sample_rate, ~16 ms at 16 kHz —
+// before that buffer's DMA channel re-triggers and overwrites it. There is no
+// third quarantine buffer and no tear detection: a slow consumer silently reads
+// partially-overwritten PCM. Drain promptly (the hello_audio demo runs vu_peak()
+// on the block inline, well within the block period).
 const uint32_t *audio_capture_block(void);
 
 #endif // AUDIO_CAPTURE_H

@@ -56,6 +56,11 @@ void audio_capture_start(void) {
 
 bool audio_capture_block_ready(void) { return s_ready; }
 
+// NOTE: s_done/s_ready form a "latest-wins" handshake, not a per-block queue. If a
+// completion IRQ lands between the !s_ready check and the s_done read below, the
+// caller receives the newer block and the intervening one is skipped — no torn
+// pointer (both are single-word volatile accesses), just intentional freshest-block
+// semantics rather than strict every-block accounting.
 const uint32_t *audio_capture_block(void) {
     if (!s_ready) return NULL;
     int idx = s_done;
