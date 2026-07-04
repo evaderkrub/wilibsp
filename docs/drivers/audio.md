@@ -57,7 +57,12 @@ The mono NAU88C10 ADC streams on the **right** slot (`AUDIO_MIC_I2S_SLOT = 1`).
 
 - **Sample rate** is fixed at 16 kHz in the current codec register set. The
   driver derives MCLK + PIO clkdiv from `clk_sys`, so it runs at the board's
-  250 MHz unchanged; MCLK lands ~0.06 % off ideal (negligible).
+  250 MHz unchanged.
+- **LRCK is locked to MCLK/256, not to the nominal fs** (see `facts.md`). MCLK is
+  an integer PWM divide of `clk_sys` (250e6/61 = 4.0984 MHz, not 4.096), so the
+  MCLK-direct codec runs fs = 16009 Hz; the PIO frame divider is derived from the
+  same integer so data-in == data-out. Setting LRCK to the nominal 16000 instead
+  reintroduces a ~9 Hz DAC-slip tick. Net pitch is +0.06 %, inaudible.
 - **DMA_IRQ_0 is shared** with the ST7796 flush — `audio_capture` uses
   `irq_add_shared_handler`; never register an exclusive handler on it.
 - **RX slot/phase alignment** is the known bring-up risk: if captured peaks sit

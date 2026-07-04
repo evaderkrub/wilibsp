@@ -44,8 +44,16 @@ void audio_i2s_duplex_init(uint32_t sample_rate) {
     pio_sm_set_pindirs_with_mask(DPX_PIO, DPX_SM, out_mask,
                                  out_mask | (1u << PIN_AUDIO_DIN));
 
-    // 3 PIO instr/bit -> PIO clock = 96*fs. Derive clkdiv directly from clk_sys.
-    float div = (float)clock_get_hz(clk_sys) / (96.0f * (float)sample_rate);
+    // 3 PIO instr/bit -> PIO clock = 96*fs. CRITICAL: lock the I2S frame rate (LRCK)
+    // to MCLK/256, NOT to the nominal sample_rate. MCLK is an INTEGER PWM divide of
+    // clk_sys, so at 250 MHz it is 250e6/61 = 4.0984 MHz (not 4.096) -> the codec's
+    // MCLK-direct DAC consumes at 4.0984e6/256 = 16009 Hz. If LRCK were set to the
+    // nominal 16000 Hz the DAC would slip ~9 samples/s -> an audible ~9 Hz tick
+    // (verified on-hardware: +/-9.2 Hz sidebands on the 1 kHz carrier). Deriving the
+    // clkdiv from the SAME integer `ticks` makes LRCK == MCLK/256 exactly, so data
+    // in == data out and the slip vanishes. clkdiv = clk/(96 * MCLK/256) = ticks*8/3.
+    // Net pitch error vs nominal is +0.06 % (16009 vs 16000 Hz) = inaudible.
+    float div = (float)(8u * ticks) / 3.0f;
     pio_sm_set_clkdiv(DPX_PIO, DPX_SM, div);
     pio_sm_set_enabled(DPX_PIO, DPX_SM, true);
 }
