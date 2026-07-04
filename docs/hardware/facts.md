@@ -194,8 +194,10 @@ above) — the 1 kHz tone plays clean on both the onboard speaker and the 3.5 mm
 `docs/superpowers/findings/2026-07-04-i2s-audio-e2e.md`.
 
 Peripherals still marked TODO in `docs/hardware/catalog.md` (NFC, IR, DVI,
-buttons, PIO-USB, I2C sensors) remain unverified — their driver harvest is
-future work. PDM mics are now DONE (see "PDM microphones" below).
+buttons, PIO-USB) remain unverified — their driver harvest is future work.
+PDM mics are now DONE (see "PDM microphones" below). The four I2C sensors
+(OPT4001, SHT40, BMI323, BMM350) are also now DONE (see "I2C sensors"
+below) — on-hardware verification via `apps/hello_sensors` is pending.
 
 ## Radio: GDO0 capture runs on PIO2, not PIO0
 
@@ -229,3 +231,26 @@ is ENDLESS and polled (`write_addr`), so it registers no `DMA_IRQ_0` handler.
   (~64 ms of slack). A consumer stalled longer than that silently loses/tears
   the stalled span — there is no overrun flag. Single consumer only (shared
   CIC state).
+
+## I2C sensors (increment 4, 2026-07-04)
+
+- **Guard convention:** `bsp/sensors/*` splits pure logic from hardware with
+  `#ifdef PICO_BUILD` — the Pico SDK defines `PICO_BUILD=1` for every target
+  build (sdk 2.2.0 `src/rp2350/pico_platform/CMakeLists.txt:11`) and the host
+  CTest tree does not, so the guards work with zero configuration. This
+  coexists with the repo's older `#ifndef HOST_TEST` convention (ook_tx,
+  scan_engine): HOST_TEST requires the test target to define it; PICO_BUILD
+  requires nothing. Both are valid; new harvests should keep whichever the
+  source repo uses.
+- **BMI323 and BMM350 I2C reads return 2 leading dummy bytes** (confirmed on
+  hardware in the source repo). The drivers account for it; anyone writing
+  raw I2C to these parts must too.
+- **OPT4001 lux factor is package-dependent** (437.5e-6 in the driver, the
+  datasheet value for the common package). Absolute lux should be calibrated
+  against a known light level; relative changes are trustworthy regardless.
+- **BMM350 init takes ~130 ms of mandatory settles** (soft reset 24 ms, OTP
+  download, magnetic reset 14+18 ms, PMU steps, normal mode 40 ms). Do not
+  "optimize" the sleeps — the sequence is ported from the hardware-validated
+  fwcom protocol notes.
+- All four sensors are blocking polled I2C1 (400 kHz) — no DMA/IRQ/PIO. The
+  SHT40 high-precision measure blocks ~10 ms per read.

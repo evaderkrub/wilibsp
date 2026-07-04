@@ -17,12 +17,16 @@ procedure once you've picked a row.
 | Audio — I2S full-duplex (NAU88C10 codec) | `bsp/audio/{audio_i2s_duplex,codec_nau88c10,audio_capture,tone_gen,vu_meter}.{c,h}`, `bsp/audio/i2s_duplex.pio` | PIO0 SM0 clocks the codec (slave, MCLK-direct); TX zero-CPU ring DMA, RX ping-pong DMA on SHARED DMA_IRQ_0. Playback (speaker/headphone) + mic capture (PCM blocks). Harvested from evaderkrub/freewili2-fullduplex-audio (MIT). Demo: `apps/hello_audio`. |
 | Sub-GHz radio — CC1101 | `bsp/radio/{cc1101,cc1101_regs,gdo_capture,monitor_engine,ook_tx,scan_engine,capture_store}.{c,h}`, `bsp/radio/gdo_capture.pio` | SPI1 (shared with LCD via `spi_bus` arbiter, 5 MHz); GDO0 capture on **pio2** + ENDLESS DMA (polled, no IRQ); OOK TX bit-bangs GDO0. Harvested from `subghz` (MIT). Demo: `apps/hello_cc1101`. |
 | PDM microphones — 4-mic array | `bsp/pdm/pdm_capture.{c,h}`, `bsp/pdm/pdm_capture.pio`, `bsp/dsp/{cic,dcblock}.{c,h}` | `pio1` (shared with LEDs), MIC_CLK=28 / SIG1=29 / SIG2=30, 1.024 MHz PDM → 16 kHz int16 PCM ×4 via integer CIC; free-running ring DMA, **no IRQ**. Mic power via `ioexp_mic_pwr()` (P1_7), driven by `pdm_capture_init()`. Harvested from local `microphonearray` (supersedes the earlier `usbcamfw`/`wili8c` pointer). Demo: `apps/hello_mics`. |
+| Ambient light — OPT4001 | `bsp/sensors/opt4001.{c,h}` | I2C1 addr 0x45 (ADDR high), continuous 100 ms conversions; lux = (mantissa<<exp) × 437.5e-6 (package-dependent — calibrate against a known light level). Harvested verbatim from `sensorview`. Demo: `apps/hello_sensors`. |
+| Humidity/temp — SHT40-AD1B | `bsp/sensors/sht40.{c,h}` | I2C1 addr 0x44, CRC-8-checked high-precision measure (~10 ms blocking). Harvested verbatim from `sensorview`. Demo: `apps/hello_sensors`. |
+| IMU — BMI323 | `bsp/sensors/bmi323.{c,h}` | I2C1 addr 0x68, chip-id 0x43, ±4 g / ±500 dps @ 100 Hz; 16-bit LE regs, reads carry 2 leading dummy bytes. Harvested verbatim from `sensorview`. Demo: `apps/hello_sensors`. |
+| Magnetometer — BMM350 | `bsp/sensors/{bmm350,bmm350_comp}.{c,h}` | I2C1 addr 0x14, chip-id 0x33; full OTP download + Bosch compensation → µT (+ sqrtf magnitude); reads carry 2 leading dummy bytes. Init ≈ 130 ms of settles. Harvested verbatim from `sensorview`. Demo: `apps/hello_sensors`. |
 
-These seven are exactly what `bsp/CMakeLists.txt` compiles into
+These eleven are exactly what `bsp/CMakeLists.txt` compiles into
 `freewili2_bsp` today (plus `third_party/segger_rtt`) and exactly what
 `bsp/fw2.h` includes. (`platform/*.c`, `display/*.c`, `input/*.c`, `leds/*.c`,
-`audio/*.c`, `radio/*.c`, `pdm/*.c`, `dsp/*.c`, plus `i2s_duplex.pio.h` and
-`gdo_capture.pio.h` generation)
+`audio/*.c`, `radio/*.c`, `pdm/*.c`, `dsp/*.c`, `sensors/*.c`, plus
+`i2s_duplex.pio.h` and `gdo_capture.pio.h` generation)
 
 ## TODO (future add-driver increments)
 
@@ -33,10 +37,6 @@ These seven are exactly what `bsp/CMakeLists.txt` compiles into
 | DVI / HSTX | DVI_CLK_N/P=12/13, DVI_D0_N/P=14/15, DVI_D1_N/P=16/17, DVI_D2_N/P=18/19 | Owner repo not yet confirmed (HSTX peripheral, likely a fresh Pico SDK HSTX example port) |
 | 14-button serial coprocessor | TX=GPIO38, RX=GPIO39 (UART) | Owner repo not yet confirmed — buttons: Up, Down, Left, Right, Center, Home, OK, Cancel, Page, Grey, Yellow, Green, Blue, Red |
 | Pico-PIO-USB (USB host via PIO) | D+=GPIO42, D-=GPIO43; 1.5K D+ pullup enabled via the I/O expander | `usbcamfw` / `wili8c` |
-| Ambient light — OPT4001 | I2C, addr 0x45 (ADDR strapped high) | `sensorview` |
-| Humidity — SHT40-AD1B-R3 | I2C, addr 0x44 | `sensorview` |
-| IMU — BMI323 | I2C | `sensorview` |
-| Magnetometer — BMM350 | I2C | `sensorview` |
 
 ## Partial / in-repo but not wired up
 
@@ -46,12 +46,14 @@ These seven are exactly what `bsp/CMakeLists.txt` compiles into
 
 ## Confirming this catalog
 
-Exactly seven peripherals are marked `DONE` above: **platform, display
+Exactly eleven peripherals are marked `DONE` above: **platform, display
 (ST7796), touch (FT6336), LEDs (WS2812 x16), audio (I2S full-duplex), radio
-(CC1101), PDM microphones**. This matches the source list compiled by
-`bsp/CMakeLists.txt` (`platform/*.c`, `display/*.c`, `input/*.c`, `leds/*.c`,
-`audio/*.c`, `radio/*.c`, `pdm/*.c`, `dsp/*.c`, `third_party/segger_rtt/*.c`)
-and the includes activated in `bsp/fw2.h`. If you add a new `DONE` row, the
-corresponding source files must already be in `bsp/CMakeLists.txt`'s
+(CC1101), PDM microphones, ambient light (OPT4001), humidity/temp (SHT40),
+IMU (BMI323), magnetometer (BMM350)**. This matches the source list compiled
+by `bsp/CMakeLists.txt` (`platform/*.c`, `display/*.c`, `input/*.c`,
+`leds/*.c`, `audio/*.c`, `radio/*.c`, `pdm/*.c`, `dsp/*.c`, `sensors/*.c`,
+`third_party/segger_rtt/*.c`) and the includes activated in `bsp/fw2.h`. If
+you add a new `DONE` row, the corresponding source files must already be in
+`bsp/CMakeLists.txt`'s
 `add_library(...)` list and the header must be `#include`d from `bsp/fw2.h`
 — otherwise it isn't actually done yet.

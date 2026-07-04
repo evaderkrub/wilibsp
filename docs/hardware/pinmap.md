@@ -75,10 +75,10 @@ GPIOs of their own, per `FwDisplayVibe.md`:
 | Peripheral | I2C address | Driver status |
 |---|---|---|
 | ST25R3916B NFC | (I2C, address not in `FwDisplayVibe.md`) | TODO |
-| OPT4001 ambient light | 0x45 (ADDR strapped high) | TODO |
-| SHT40-AD1B-R3 humidity | 0x44 | TODO |
-| BMI323 IMU | (I2C, address not in `FwDisplayVibe.md`) | TODO |
-| BMM350 magnetometer | (I2C, address not in `FwDisplayVibe.md`) | TODO |
+| OPT4001 ambient light | 0x45 (ADDR strapped high) | DONE (`bsp/sensors/opt4001.c`) |
+| SHT40-AD1B-R3 humidity | 0x44 | DONE (`bsp/sensors/sht40.c`) |
+| BMI323 IMU | 0x68 | DONE (`bsp/sensors/bmi323.c`) |
+| BMM350 magnetometer | 0x14 | DONE (`bsp/sensors/bmm350.c`) |
 
 Note: `FwDisplayVibe.md` also lists a USB host hub (CH334F) on the default
 USB port, exposing ports HP1/HP2 with power switched by the IO expander —
