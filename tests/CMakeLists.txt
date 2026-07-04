@@ -74,3 +74,11 @@ target_include_directories(test_scan_engine PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(test_scan_engine PRIVATE HOST_TEST)
 add_test(NAME scan_engine COMMAND test_scan_engine)
+
+add_executable(test_cic
+    test_cic.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp/dsp/cic.c)
+target_include_directories(test_cic PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME cic COMMAND test_cic)
