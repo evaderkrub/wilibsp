@@ -115,8 +115,7 @@ Ported from the subghz `tests/` tree, using the wilibsp pattern (a
 ## Demo app: `apps/hello_cc1101`
 
 RTT-only (no display, no LVGL). A single linear self-verify sequence — chosen because
-it exercises SPI, PIO/DMA capture, and OOK TX with **zero external RF gear** via
-near-field self-reception:
+it exercises SPI, PIO/DMA capture, and OOK TX timing with **zero external RF gear**:
 
 1. **Probe.** `board_init()` → `ioexp_antenna(ANT_CC1101_433)` → `cc1101_init()`.
    `DIAG` PARTNUM/VERSION and a clear PASS/FAIL on the presence check
@@ -124,12 +123,21 @@ near-field self-reception:
 2. **RSSI sweep.** Drive `scan_engine` across the 433 band; `DIAG` the noise floor and
    peak (frequency + dBm, all integers → RTT-safe, no floats). Verifies SPI + RSSI
    with nothing connected.
-3. **TX → capture loopback.** `gdo_capture_init()` (on pio2) + `gdo_capture_start()`,
-   then `cc1101_tx_ook_start(433_920_000)` + `ook_tx_send()` of a synthesized OOK
-   pulse train, then `cc1101_tx_ook_stop()` + `gdo_capture_attach_pin()` and
-   `gdo_capture_drain()`. `DIAG` the captured edge count and assert it is non-zero
-   (the radio hears its own keyed carrier at short range). Verifies PIO2/DMA capture
-   and OOK TX end-to-end.
+3. **Same-pad TX→capture check.** `gdo_capture_init()` (on pio2) + `gdo_capture_start()`,
+   then `cc1101_tx_ook_start(433_920_000)` (exercises the OOK-TX register path over SPI
+   and keys the carrier) + `ook_tx_send()` of a synthesized OOK pulse train that drives
+   GDO0/GPIO32 as an SIO output, then `cc1101_tx_ook_stop()` +
+   `gdo_capture_attach_pin()` and `gdo_capture_drain()`. The capture PIO reads the same
+   GDO0 pad the transmit code is toggling (the pad input synchronizer is live regardless
+   of which function drives the output), so this deterministically verifies the
+   PIO2/DMA/drain path **and** the `ook_tx` timing without any RF link. `DIAG` the
+   captured edge count and assert it is on the order of the number of pulses sent.
+
+   **This is a plumbing test, not an RF-link test.** GDO0 is a single pin — it is either
+   the chip's RX-data output or the MCU's TX-data input, never both at once — so the demo
+   does **not** claim the radio receives its own transmission over the air. Verifying an
+   actual RX demod path needs an external transmitter (a follow-on bench test, out of
+   scope here).
 
 Register in the top-level `CMakeLists.txt` via `add_subdirectory(apps/hello_cc1101)`;
 build with `pico_set_binary_type(hello_cc1101 copy_to_ram)`.
@@ -165,7 +173,7 @@ build with `pico_set_binary_type(hello_cc1101 copy_to_ram)`.
   the radio sources.
 - Whole-branch review approved (opus final pass).
 - On-hardware smoke test: `fw flash hello_cc1101` + `fw rtt` shows PARTNUM=0x00 with a
-  plausible VERSION, a sane RSSI floor/peak from the sweep, and a non-zero captured
-  edge count from the OOK self-loopback.
+  plausible VERSION, a sane RSSI floor/peak from the sweep, and a captured edge count
+  from the same-pad TX→capture check on the order of the pulses sent.
 - Merge to `master` off a `feat/cc1101-radio` branch; findings recorded under
   `docs/superpowers/findings/`.
