@@ -90,3 +90,11 @@ target_include_directories(test_dcblock PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../bsp
     ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME dcblock COMMAND test_dcblock)
+
+add_executable(test_sht40
+    test_sht40.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp/sensors/sht40.c)
+target_include_directories(test_sht40 PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME sht40 COMMAND test_sht40)
