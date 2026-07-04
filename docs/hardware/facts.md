@@ -197,7 +197,9 @@ Peripherals still marked TODO in `docs/hardware/catalog.md` (NFC, IR, DVI,
 buttons, PIO-USB) remain unverified — their driver harvest is future work.
 PDM mics are now DONE (see "PDM microphones" below). The four I2C sensors
 (OPT4001, SHT40, BMI323, BMM350) are also now DONE (see "I2C sensors"
-below) — on-hardware verification via `apps/hello_sensors` is pending.
+below) — hardware-verified 2026-07-04 via `apps/hello_sensors` (4/4 chip-ids,
+gravity vector PASS; human stimulus tests pending — see
+`docs/superpowers/findings/2026-07-04-i2c-sensors-e2e.md`).
 
 ## Radio: GDO0 capture runs on PIO2, not PIO0
 
