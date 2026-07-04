@@ -1,0 +1,53 @@
+; src/pdm/pdm_capture.pio — drive shared PDM clock (side-set), sample 2 data
+; pins (MIC_SIG1/2, consecutive at IN base) MID-PHASE on each clock phase.
+; The clock edge is DRIVEN first (nop), we wait [d] cycles for the mic data line
+; to settle, THEN sample — instead of latching coincident with the edge (which
+; captured a fixed value with no AC). One loop = one full PDM clock period and
+; yields 4 bits in the ISR, oldest-in-high (shift-left):
+;   [sig2@high, sig1@high, sig2@low, sig1@low]. Autopush at 32 -> 8 periods/word.
+; Cycles/period = 4 + 2*[d]; with [d]=1 -> 6 cycles (see clkdiv below).
+.program pdm_capture
+.side_set 1
+.wrap_target
+    nop           side 1 [1]   ; CLK -> high, let SIG1/SIG2 settle
+    in pins, 2    side 1       ; sample mid HIGH phase: Mic C (sig2) + Mic A (sig1)
+    nop           side 0 [1]   ; CLK -> low, let SIG1/SIG2 settle
+    in pins, 2    side 0       ; sample mid LOW  phase: Mic D (sig2) + Mic B (sig1)
+.wrap
+
+% c-sdk {
+#include "hardware/clocks.h"
+#include "hardware/gpio.h"
+#include "hardware/structs/pads_bank0.h"
+static inline void pdm_capture_program_init(PIO pio, uint sm, uint offset,
+                                            uint clk_pin, uint in_base) {
+    pio_sm_config c = pdm_capture_program_get_default_config(offset);
+    sm_config_set_sideset_pins(&c, clk_pin);
+    sm_config_set_in_pins(&c, in_base);
+    sm_config_set_in_shift(&c, false, true, 32);   // shift left, autopush at 32
+    sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_RX);
+
+    pio_gpio_init(pio, clk_pin);
+    pio_gpio_init(pio, in_base);
+    pio_gpio_init(pio, in_base + 1);
+    pio_sm_set_consecutive_pindirs(pio, sm, clk_pin, 1, true);    // clk out
+    pio_sm_set_consecutive_pindirs(pio, sm, in_base, 2, false);   // data in
+
+    // RP2350 pad-isolation trap: input pads power up with the input buffer
+    // disabled AND the ISO latch (PADS bit 8) engaged, so the PIO reads a stuck-0
+    // and the PDM line looks static (decimates to pure DC). Explicitly enable the
+    // input buffer and clear ISO on both data pins. (Ref: movieplayer mic.c.)
+    gpio_set_input_enabled(in_base, true);
+    gpio_set_input_enabled(in_base + 1, true);
+    hw_clear_bits(&pads_bank0_hw->io[in_base],     PADS_BANK0_GPIO0_ISO_BITS);
+    hw_clear_bits(&pads_bank0_hw->io[in_base + 1], PADS_BANK0_GPIO0_ISO_BITS);
+
+    // 6 cycles/period: nop[+1] + in + nop[+1] + in = 4 instr + 2 delay cycles.
+    // clkdiv = sysclk / (PDM_CLK_HZ * 6) keeps MIC_CLK ~3.072 MHz.
+    float div = (float)clock_get_hz(clk_sys) / (float)(PDM_CLK_HZ * 6u);
+    sm_config_set_clkdiv(&c, div);
+
+    pio_sm_init(pio, sm, offset, &c);
+    pio_sm_set_enabled(pio, sm, true);
+}
+%}

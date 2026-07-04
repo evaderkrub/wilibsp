@@ -35,6 +35,16 @@
 #define PIN_AUDIO_BCLK 7    // SPK_BCLK: I2S bit clock   (PIO sideset bit 1)
 #define PIN_AUDIO_MCLK 22   // SPK_MCLK: 256*fs square wave from PWM
 
+// --- PDM microphones (4 MEMS mics, 2 data lines x 2 clock phases) ---
+#define PIN_MIC_CLK    28   // shared PDM clock out (PIO side-set)
+#define PIN_MIC_SIG1   29   // data line 1: Mic A (clk-high) + Mic B (clk-low)
+#define PIN_MIC_SIG2   30   // data line 2: Mic C (clk-high) + Mic D (clk-low)
+// MIC_SIG1/2 are consecutive so one PIO `in pins, 2` reads both.
+// PDM clock 1.024 MHz (= 16 kHz x 64): the FW2 MEMS mics did NOT output at the
+// datasheet-typical 3.072 MHz on this board (measured in microphonearray repo);
+// 1.024 MHz matches the known-working movieplayer mic on this hardware.
+#define PDM_CLK_HZ     1024000u
+
 // --- External PSRAM (APS6404L 8MB) on the QSPI/QMI second chip select ---
 // GPIO47 = XIP_CS1n (function 9), NOT on SPI1. Brought up + memory-mapped in Plan 4.
 #define PIN_PSRAM_CS   47

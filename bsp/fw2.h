@@ -22,4 +22,8 @@
 #include "radio/monitor_engine.h"  // (Task 3-radio)
 #include "radio/capture_store.h"   // (Task 3-radio)
 
+#include "pdm/pdm_capture.h"       // (Increment 2: PDM mics)
+#include "dsp/cic.h"               // (Increment 2: PDM mics)
+#include "dsp/dcblock.h"           // (Increment 2: PDM mics)
+
 #endif // FW2_H
