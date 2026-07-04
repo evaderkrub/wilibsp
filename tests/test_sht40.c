@@ -21,16 +21,21 @@ int main(void) {
     ASSERT_EQ(crc8(0xBE, 0xEF), 0x92);
 
     // 1. Known frame 0xBEEF/0xBEEF with valid CRCs: both formulas.
-    //    t = -45 + 175*48879/65535 = 85.5177 C; rh = -6 + 125*48879/65535 = 87.2269 %.
+    //    t = -45 + 175*48879/65535 = 85.5230 C; rh = -6 + 125*48879/65535 = 87.2307 %.
     uint8_t f1[6] = { 0xBE, 0xEF, 0x92, 0xBE, 0xEF, 0x92 };
     ASSERT_TRUE(sht40_convert(f1, &t, &rh, &crc));
     ASSERT_TRUE(crc);
-    ASSERT_NEAR(t, 85.5177f, 0.01);
-    ASSERT_NEAR(rh, 87.2269f, 0.01);
+    ASSERT_NEAR(t, 85.5230f, 0.001);
+    ASSERT_NEAR(rh, 87.2307f, 0.001);
 
     // 2. Corrupted CRC byte -> crc_ok false, convert returns false.
     uint8_t f2[6] = { 0xBE, 0xEF, 0x93, 0xBE, 0xEF, 0x92 };
     ASSERT_TRUE(!sht40_convert(f2, &t, &rh, &crc));
+    ASSERT_TRUE(!crc);
+
+    // 2b. Corrupted RH-block CRC byte -> also rejected.
+    uint8_t f2b[6] = { 0xBE, 0xEF, 0x92, 0xBE, 0xEF, 0x93 };
+    ASSERT_TRUE(!sht40_convert(f2b, &t, &rh, &crc));
     ASSERT_TRUE(!crc);
 
     // 3. All-zero ticks: temp = -45 C exactly; raw rh = -6 % clamps to 0.
