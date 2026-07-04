@@ -90,3 +90,35 @@ target_include_directories(test_dcblock PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../bsp
     ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME dcblock COMMAND test_dcblock)
+
+add_executable(test_sht40
+    test_sht40.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp/sensors/sht40.c)
+target_include_directories(test_sht40 PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME sht40 COMMAND test_sht40)
+
+add_executable(test_opt4001
+    test_opt4001.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp/sensors/opt4001.c)
+target_include_directories(test_opt4001 PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME opt4001 COMMAND test_opt4001)
+
+add_executable(test_bmi323
+    test_bmi323.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp/sensors/bmi323.c)
+target_include_directories(test_bmi323 PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME bmi323 COMMAND test_bmi323)
+
+add_executable(test_bmm350_comp
+    test_bmm350_comp.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp/sensors/bmm350_comp.c)
+target_include_directories(test_bmm350_comp PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME bmm350_comp COMMAND test_bmm350_comp)

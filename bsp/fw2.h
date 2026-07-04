@@ -26,4 +26,10 @@
 #include "dsp/cic.h"               // (Increment 2: PDM mics)
 #include "dsp/dcblock.h"           // (Increment 2: PDM mics)
 
+#include "sensors/sht40.h"        // (Increment 4: I2C sensors)
+#include "sensors/opt4001.h"      // (Increment 4: I2C sensors)
+#include "sensors/bmi323.h"       // (Increment 4: I2C sensors)
+#include "sensors/bmm350.h"       // (Increment 4: I2C sensors)
+#include "sensors/bmm350_comp.h"  // (Increment 4: I2C sensors)
+
 #endif // FW2_H
