@@ -20,8 +20,8 @@ against `board.h` again once that peripheral gets a driver, since
 | `PIN_LCD_BL` | 25 | LCD backlight | Plain on/off GPIO (no PWM dimming yet) |
 | `PIN_CC1101_CS` | 40 | CC1101 chip-select | Active low; parked HIGH in `board_init()` before any LCD traffic. **`FwDisplayVibe.md` says GPIO 23 for this signal — that's a second discrepancy; `board.h`/`board.c` (which actively drives GPIO 40 HIGH at boot) is authoritative. See facts.md.** |
 | `PIN_CC1101_MISO` | 8 | CC1101 MISO | == `PIN_LCD_DC`; an OUTPUT (DC) for the LCD, must mux to SPI1 RX (input) around CC1101 access |
-| `PIN_CC1101_GDO0` | 32 | CC1101 live data / sync | PIO-sampled (deferred — see catalog) |
-| `PIN_CC1101_GDO2` | 37 | CC1101 GDO2 | Deferred — see catalog |
+| `PIN_CC1101_GDO0` | 32 | CC1101 live data / sync | PIO2-sampled edge capture (`gdo_capture`) |
+| `PIN_CC1101_GDO2` | 37 | CC1101 GDO2 | Unused |
 | `PIN_LED_DATA` | 21 | WS2812 data (16 pixels) | Driven by a `pio1` state machine |
 | `PIN_I2C1_SDA` | 26 | I2C1 SDA | Touch (FT6336) + sensors, 400 kHz |
 | `PIN_I2C1_SCL` | 27 | I2C1 SCL | Touch (FT6336) + sensors, 400 kHz |
