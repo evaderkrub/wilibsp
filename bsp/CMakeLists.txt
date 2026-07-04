@@ -26,6 +26,11 @@ add_library(freewili2_bsp STATIC
     pdm/pdm_capture.c
     dsp/cic.c
     dsp/dcblock.c
+    sensors/sht40.c
+    sensors/opt4001.c
+    sensors/bmi323.c
+    sensors/bmm350.c
+    sensors/bmm350_comp.c
     gfx/palette.c
     third_party/segger_rtt/SEGGER_RTT.c
     third_party/segger_rtt/SEGGER_RTT_printf.c)
