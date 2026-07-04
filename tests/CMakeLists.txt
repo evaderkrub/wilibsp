@@ -40,3 +40,11 @@ target_include_directories(test_cc1101_regs PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../bsp
     ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME cc1101_regs COMMAND test_cc1101_regs)
+
+add_executable(test_monitor_engine
+    test_monitor_engine.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp/radio/monitor_engine.c)
+target_include_directories(test_monitor_engine PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME monitor_engine COMMAND test_monitor_engine)
