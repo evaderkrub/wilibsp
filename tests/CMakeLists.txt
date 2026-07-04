@@ -82,3 +82,11 @@ target_include_directories(test_cic PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../bsp
     ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME cic COMMAND test_cic)
+
+add_executable(test_dcblock
+    test_dcblock.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp/dsp/dcblock.c)
+target_include_directories(test_dcblock PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME dcblock COMMAND test_dcblock)
