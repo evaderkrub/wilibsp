@@ -194,8 +194,8 @@ above) — the 1 kHz tone plays clean on both the onboard speaker and the 3.5 mm
 `docs/superpowers/findings/2026-07-04-i2s-audio-e2e.md`.
 
 Peripherals still marked TODO in `docs/hardware/catalog.md` (NFC, IR, DVI,
-PDM mics, buttons, PIO-USB, I2C sensors) remain unverified — their driver harvest is
-future work.
+buttons, PIO-USB, I2C sensors) remain unverified — their driver harvest is
+future work. PDM mics are now DONE (see "PDM microphones" below).
 
 ## Radio: GDO0 capture runs on PIO2, not PIO0
 
@@ -208,3 +208,24 @@ low-GPIO access. `pio2` is otherwise unused. The BSP is built with
 GPIO≥32 PIO access. The subghz source used `pio0`; the `pio0`→`pio2` change is the only
 functional edit made during the harvest. GDO2 (GPIO37) remains unused. The capture DMA
 is ENDLESS and polled (`write_addr`), so it registers no `DMA_IRQ_0` handler.
+
+## PDM microphones (increment 2, 2026-07-04)
+
+- **PDM clock is 1.024 MHz, not the datasheet-typical 3.072 MHz.** The FW2
+  MEMS mics did not output data at 3.072 MHz on this board (measured in the
+  `microphonearray` repo; matches the known-working movieplayer mic). 1.024 MHz
+  × CIC decimate 64 → 16 kHz PCM. `PDM_CLK_HZ` lives in `bsp/platform/board.h`.
+- **RP2350 pad-isolation trap:** input pads power up with the input buffer
+  disabled AND the ISO latch (PADS bit 8) engaged — the PIO reads stuck-0 and
+  the PDM stream decimates to pure DC. `pdm_capture.pio`'s init explicitly
+  enables the input buffers and clears ISO on GPIO 29/30.
+- **Mic power is PCAL6524 P1 bit 7 (`MIC_PWR`, active-high)** — off at
+  power-on and after `ioexp_init()`; `pdm_capture_init()` drives it on via
+  `ioexp_mic_pwr(true)` and waits 50 ms.
+- **Physical left-to-right mic order is D, B, A, C** (bench-measured phase
+  ramp in the `microphonearray` repo), not A, B, C, D. Channel indices MIC_A..D
+  are line/phase order: SIG1-high, SIG1-low, SIG2-high, SIG2-low.
+- **Overrun semantics:** the capture DMA free-runs into a 32 KiB ring
+  (~64 ms of slack). A consumer stalled longer than that silently loses/tears
+  the stalled span — there is no overrun flag. Single consumer only (shared
+  CIC state).

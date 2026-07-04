@@ -31,6 +31,9 @@ against `board.h` again once that peripheral gets a driver, since
 | `PIN_AUDIO_LRCK` | 6  | I2S word clock (SPK_LRCK)             | PIO sideset bit 0 |
 | `PIN_AUDIO_BCLK` | 7  | I2S bit clock (SPK_BCLK)              | PIO sideset bit 1 |
 | `PIN_AUDIO_MCLK` | 22 | Codec master clock (SPK_MCLK)         | 256*fs square wave (PWM) |
+| `PIN_MIC_CLK` | 28 | PDM mic array (shared clock out) | `pio1` side-set, 1.024 MHz (NOT 3.072 — see facts.md) |
+| `PIN_MIC_SIG1` | 29 | PDM data line 1 | Mic A (clk-high) + Mic B (clk-low); consecutive with SIG2 for `in pins, 2` |
+| `PIN_MIC_SIG2` | 30 | PDM data line 2 | Mic C (clk-high) + Mic D (clk-low) |
 
 SPI1 baud rates (shared bus, from `board.h`): LCD 100 MHz
 (`LCD_SPI_BAUD`, divider-limited by `clk_peri`), CC1101 5 MHz
@@ -63,9 +66,6 @@ once each one gets a driver** — do not assume `FwDisplayVibe.md` is exact
 | Haptic motor | 46 | Haptic driver | TODO |
 | Buttons TX | 38 | 14-button serial coprocessor (UART out) | TODO |
 | Buttons RX | 39 | 14-button serial coprocessor (UART in) | TODO |
-| MIC_CLK | 28 | PDM mic array (shared clock) | TODO |
-| MIC_SIG_1 | 29 | PDM mic pair 1 (L/R) | TODO |
-| MIC_SIG_2 | 30 | PDM mic pair 2 (L/R) | TODO |
 | PIO-USB D+ | 42 | Pico-PIO-USB host port | TODO |
 | PIO-USB D- | 43 | Pico-PIO-USB host port | TODO |
 

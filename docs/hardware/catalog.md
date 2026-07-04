@@ -16,12 +16,13 @@ procedure once you've picked a row.
 | LEDs — WS2812 x16 | `bsp/leds/{led_color,ws2812_driver}.{c,h}`, `bsp/leds/ws2812.pio` | `pio1`, GPIO 21, inverted output. `FW2_LED_COUNT` = 16 (see facts.md discrepancy record). `led_ui.{c,h}` is present but its `led_spectrum_map` dependency (`gfx/palette.c`) is not yet harvested — see below. |
 | Audio — I2S full-duplex (NAU88C10 codec) | `bsp/audio/{audio_i2s_duplex,codec_nau88c10,audio_capture,tone_gen,vu_meter}.{c,h}`, `bsp/audio/i2s_duplex.pio` | PIO0 SM0 clocks the codec (slave, MCLK-direct); TX zero-CPU ring DMA, RX ping-pong DMA on SHARED DMA_IRQ_0. Playback (speaker/headphone) + mic capture (PCM blocks). Harvested from evaderkrub/freewili2-fullduplex-audio (MIT). Demo: `apps/hello_audio`. |
 | Sub-GHz radio — CC1101 | `bsp/radio/{cc1101,cc1101_regs,gdo_capture,monitor_engine,ook_tx,scan_engine,capture_store}.{c,h}`, `bsp/radio/gdo_capture.pio` | SPI1 (shared with LCD via `spi_bus` arbiter, 5 MHz); GDO0 capture on **pio2** + ENDLESS DMA (polled, no IRQ); OOK TX bit-bangs GDO0. Harvested from `subghz` (MIT). Demo: `apps/hello_cc1101`. |
+| PDM microphones — 4-mic array | `bsp/pdm/pdm_capture.{c,h}`, `bsp/pdm/pdm_capture.pio`, `bsp/dsp/{cic,dcblock}.{c,h}` | `pio1` (shared with LEDs), MIC_CLK=28 / SIG1=29 / SIG2=30, 1.024 MHz PDM → 16 kHz int16 PCM ×4 via integer CIC; free-running ring DMA, **no IRQ**. Mic power via `ioexp_mic_pwr()` (P1_7), driven by `pdm_capture_init()`. Harvested from local `microphonearray` (supersedes the earlier `usbcamfw`/`wili8c` pointer). Demo: `apps/hello_mics`. |
 
-These six are exactly what `bsp/CMakeLists.txt` compiles into
+These seven are exactly what `bsp/CMakeLists.txt` compiles into
 `freewili2_bsp` today (plus `third_party/segger_rtt`) and exactly what
 `bsp/fw2.h` includes. (`platform/*.c`, `display/*.c`, `input/*.c`, `leds/*.c`,
-`audio/*.c`, `radio/*.c`, plus `i2s_duplex.pio.h` and `gdo_capture.pio.h`
-generation)
+`audio/*.c`, `radio/*.c`, `pdm/*.c`, `dsp/*.c`, plus `i2s_duplex.pio.h` and
+`gdo_capture.pio.h` generation)
 
 ## TODO (future add-driver increments)
 
@@ -30,7 +31,6 @@ generation)
 | NFC — ST25R3916B | I2C1 (SDA=26/SCL=27) | `subghz`/`sensorview` (check which owns an NFC driver; not confirmed at catalog time) |
 | IR TX/RX | TX=GPIO20, RX=GPIO24 | `sensorview` or a new harvest — owner repo not yet confirmed |
 | DVI / HSTX | DVI_CLK_N/P=12/13, DVI_D0_N/P=14/15, DVI_D1_N/P=16/17, DVI_D2_N/P=18/19 | Owner repo not yet confirmed (HSTX peripheral, likely a fresh Pico SDK HSTX example port) |
-| PDM microphones (4-mic linear array, 19 mm spacing) | MIC_CLK=28 (shared), MIC_SIG_1=29 (pair 1 L/R), MIC_SIG_2=30 (pair 2 L/R); MIC_PWR via the I/O expander | `usbcamfw` / `wili8c` |
 | 14-button serial coprocessor | TX=GPIO38, RX=GPIO39 (UART) | Owner repo not yet confirmed — buttons: Up, Down, Left, Right, Center, Home, OK, Cancel, Page, Grey, Yellow, Green, Blue, Red |
 | Pico-PIO-USB (USB host via PIO) | D+=GPIO42, D-=GPIO43; 1.5K D+ pullup enabled via the I/O expander | `usbcamfw` / `wili8c` |
 | Ambient light — OPT4001 | I2C, addr 0x45 (ADDR strapped high) | `sensorview` |
@@ -46,11 +46,12 @@ generation)
 
 ## Confirming this catalog
 
-Exactly six peripherals are marked `DONE` above: **platform, display
+Exactly seven peripherals are marked `DONE` above: **platform, display
 (ST7796), touch (FT6336), LEDs (WS2812 x16), audio (I2S full-duplex), radio
-(CC1101)**. This matches the source list compiled by `bsp/CMakeLists.txt`
-(`platform/*.c`, `display/*.c`, `input/*.c`, `leds/*.c`, `audio/*.c`,
-`radio/*.c`, `third_party/segger_rtt/*.c`) and the includes activated in
-`bsp/fw2.h`. If you add a new `DONE` row, the corresponding source files must
-already be in `bsp/CMakeLists.txt`'s `add_library(...)` list and the header
-must be `#include`d from `bsp/fw2.h` — otherwise it isn't actually done yet.
+(CC1101), PDM microphones**. This matches the source list compiled by
+`bsp/CMakeLists.txt` (`platform/*.c`, `display/*.c`, `input/*.c`, `leds/*.c`,
+`audio/*.c`, `radio/*.c`, `pdm/*.c`, `dsp/*.c`, `third_party/segger_rtt/*.c`)
+and the includes activated in `bsp/fw2.h`. If you add a new `DONE` row, the
+corresponding source files must already be in `bsp/CMakeLists.txt`'s
+`add_library(...)` list and the header must be `#include`d from `bsp/fw2.h`
+— otherwise it isn't actually done yet.
