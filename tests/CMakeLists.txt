@@ -32,3 +32,11 @@ target_include_directories(test_vu_meter PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(test_vu_meter m)
 add_test(NAME vu_meter COMMAND test_vu_meter)
+
+add_executable(test_cc1101_regs
+    test_cc1101_regs.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp/radio/cc1101_regs.c)
+target_include_directories(test_cc1101_regs PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME cc1101_regs COMMAND test_cc1101_regs)
