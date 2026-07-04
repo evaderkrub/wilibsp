@@ -48,3 +48,11 @@ target_include_directories(test_monitor_engine PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../bsp
     ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME monitor_engine COMMAND test_monitor_engine)
+
+add_executable(test_capture_store
+    test_capture_store.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp/radio/capture_store.c)
+target_include_directories(test_capture_store PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME capture_store COMMAND test_capture_store)
