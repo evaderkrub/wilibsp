@@ -56,3 +56,12 @@ target_include_directories(test_capture_store PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../bsp
     ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME capture_store COMMAND test_capture_store)
+
+add_executable(test_ook_tx
+    test_ook_tx.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp/radio/ook_tx.c)
+target_include_directories(test_ook_tx PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp
+    ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_definitions(test_ook_tx PRIVATE HOST_TEST)
+add_test(NAME ook_tx COMMAND test_ook_tx)
