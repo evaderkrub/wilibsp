@@ -65,3 +65,12 @@ target_include_directories(test_ook_tx PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(test_ook_tx PRIVATE HOST_TEST)
 add_test(NAME ook_tx COMMAND test_ook_tx)
+
+add_executable(test_scan_engine
+    test_scan_engine.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp/radio/scan_engine.c)
+target_include_directories(test_scan_engine PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp
+    ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_definitions(test_scan_engine PRIVATE HOST_TEST)
+add_test(NAME scan_engine COMMAND test_scan_engine)
