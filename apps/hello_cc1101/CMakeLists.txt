@@ -1,0 +1,4 @@
+add_executable(hello_cc1101 main.c)
+target_link_libraries(hello_cc1101 freewili2_bsp)
+pico_set_binary_type(hello_cc1101 copy_to_ram)
+pico_add_extra_outputs(hello_cc1101)

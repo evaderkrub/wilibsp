@@ -193,6 +193,18 @@ above) — the 1 kHz tone plays clean on both the onboard speaker and the 3.5 mm
 (±9.2 Hz slip sidebands −17 dB → −44 dB). Full record:
 `docs/superpowers/findings/2026-07-04-i2s-audio-e2e.md`.
 
-Peripherals still marked TODO in `docs/hardware/catalog.md` (radio, NFC, IR, DVI,
+Peripherals still marked TODO in `docs/hardware/catalog.md` (NFC, IR, DVI,
 PDM mics, buttons, PIO-USB, I2C sensors) remain unverified — their driver harvest is
 future work.
+
+## Radio: GDO0 capture runs on PIO2, not PIO0
+
+`bsp/radio/gdo_capture.c` sets `s_pio = pio2` and calls `pio_set_gpio_base(pio2, 16)`
+so it can reach GDO0 = GPIO32 (the PIO GPIO-base window must move to 16..47).
+`pio_set_gpio_base` shifts the base for the WHOLE PIO block, so this cannot run on
+`pio0` (audio I2S, GPIO 4–7) or `pio1` (WS2812 LEDs, GPIO 21) without breaking their
+low-GPIO access. `pio2` is otherwise unused. The BSP is built with
+`PICO_PIO_USE_GPIO_BASE=1` (a PUBLIC compile def on `freewili2_bsp`) — required for any
+GPIO≥32 PIO access. The subghz source used `pio0`; the `pio0`→`pio2` change is the only
+functional edit made during the harvest. GDO2 (GPIO37) remains unused. The capture DMA
+is ENDLESS and polled (`write_addr`), so it registers no `DMA_IRQ_0` handler.
