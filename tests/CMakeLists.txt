@@ -106,3 +106,11 @@ target_include_directories(test_opt4001 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../bsp
     ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME opt4001 COMMAND test_opt4001)
+
+add_executable(test_bmi323
+    test_bmi323.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp/sensors/bmi323.c)
+target_include_directories(test_bmi323 PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME bmi323 COMMAND test_bmi323)
