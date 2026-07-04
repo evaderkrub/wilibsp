@@ -16,6 +16,13 @@ add_library(freewili2_bsp STATIC
     audio/codec_nau88c10.c
     audio/audio_i2s_duplex.c
     audio/audio_capture.c
+    radio/cc1101_regs.c
+    radio/cc1101.c
+    radio/gdo_capture.c
+    radio/monitor_engine.c
+    radio/ook_tx.c
+    radio/scan_engine.c
+    radio/capture_store.c
     gfx/palette.c
     third_party/segger_rtt/SEGGER_RTT.c
     third_party/segger_rtt/SEGGER_RTT_printf.c)
@@ -34,6 +41,9 @@ target_link_libraries(freewili2_bsp PUBLIC
     hardware_vreg
     hardware_pwm)
 
+# GDO0 = GPIO32; PIO must use the GPIO base window 16..47 to reach it.
+target_compile_definitions(freewili2_bsp PUBLIC PICO_PIO_USE_GPIO_BASE=1)
+
 # Generate the WS2812 PIO header into the build tree for ws2812_driver.c.
 pico_generate_pio_header(freewili2_bsp
     ${CMAKE_CURRENT_SOURCE_DIR}/leds/ws2812.pio)
@@ -41,3 +51,7 @@ pico_generate_pio_header(freewili2_bsp
 # Generate the I2S full-duplex PIO header into the build tree for audio_i2s_duplex.c.
 pico_generate_pio_header(freewili2_bsp
     ${CMAKE_CURRENT_SOURCE_DIR}/audio/i2s_duplex.pio)
+
+# Generate the GDO0 capture PIO header into the build tree for gdo_capture.c.
+pico_generate_pio_header(freewili2_bsp
+    ${CMAKE_CURRENT_SOURCE_DIR}/radio/gdo_capture.pio)

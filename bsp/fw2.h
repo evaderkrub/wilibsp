@@ -15,4 +15,11 @@
 #include "audio/audio_i2s_duplex.h"  // (Task 2)
 #include "audio/audio_capture.h"     // (Task 3)
 
+#include "radio/cc1101.h"          // (Task 3-radio)
+#include "radio/gdo_capture.h"     // (Task 3-radio)
+#include "radio/scan_engine.h"     // (Task 3-radio)
+#include "radio/ook_tx.h"          // (Task 3-radio)
+#include "radio/monitor_engine.h"  // (Task 3-radio)
+#include "radio/capture_store.h"   // (Task 3-radio)
+
 #endif // FW2_H
