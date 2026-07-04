@@ -43,7 +43,8 @@ static inline void pdm_capture_program_init(PIO pio, uint sm, uint offset,
     hw_clear_bits(&pads_bank0_hw->io[in_base + 1], PADS_BANK0_GPIO0_ISO_BITS);
 
     // 6 cycles/period: nop[+1] + in + nop[+1] + in = 4 instr + 2 delay cycles.
-    // clkdiv = sysclk / (PDM_CLK_HZ * 6) keeps MIC_CLK ~3.072 MHz.
+    // clkdiv = sysclk / (PDM_CLK_HZ * 6) keeps MIC_CLK at PDM_CLK_HZ (1.024 MHz
+    // on this board — NOT 3.072 MHz; see board.h / docs/hardware/facts.md).
     float div = (float)clock_get_hz(clk_sys) / (float)(PDM_CLK_HZ * 6u);
     sm_config_set_clkdiv(&c, div);
 
