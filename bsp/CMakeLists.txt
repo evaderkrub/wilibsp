@@ -23,6 +23,9 @@ add_library(freewili2_bsp STATIC
     radio/ook_tx.c
     radio/scan_engine.c
     radio/capture_store.c
+    pdm/pdm_capture.c
+    dsp/cic.c
+    dsp/dcblock.c
     gfx/palette.c
     third_party/segger_rtt/SEGGER_RTT.c
     third_party/segger_rtt/SEGGER_RTT_printf.c)
@@ -55,3 +58,7 @@ pico_generate_pio_header(freewili2_bsp
 # Generate the GDO0 capture PIO header into the build tree for gdo_capture.c.
 pico_generate_pio_header(freewili2_bsp
     ${CMAKE_CURRENT_SOURCE_DIR}/radio/gdo_capture.pio)
+
+# Generate the PDM capture PIO header into the build tree for pdm_capture.c.
+pico_generate_pio_header(freewili2_bsp
+    ${CMAKE_CURRENT_SOURCE_DIR}/pdm/pdm_capture.pio)

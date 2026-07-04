@@ -39,15 +39,28 @@ static uint8_t ant_bits(uint8_t sel) {
     return (uint8_t)(((sel & 1u) ? 0x08u : 0u) | ((sel & 2u) ? 0x02u : 0u));
 }
 
+// Shadow of the Port-1 output byte: base control bits + antenna select + MIC_PWR.
+// Default matches ioexp_init(): CC1101 433 antenna, mic power OFF.
+#define P1_MIC_PWR 0x80   // P1 bit 7, active-high mic rail
+#define P1_ANT_MASK 0x0A  // V1_1 (bit3) | V2_1 (bit1)
+static uint8_t s_p1 = P1_BASE | 0x08;   // == P1_BASE | ant_bits(ANT_CC1101_433)
+
 void ioexp_antenna(uint8_t sel) {
-    write_outputs(P0_OUT, (uint8_t)(P1_BASE | ant_bits(sel)));
+    s_p1 = (uint8_t)((s_p1 & (uint8_t)~P1_ANT_MASK) | ant_bits(sel));
+    write_outputs(P0_OUT, s_p1);
+}
+
+void ioexp_mic_pwr(bool on) {
+    s_p1 = on ? (uint8_t)(s_p1 | P1_MIC_PWR) : (uint8_t)(s_p1 & (uint8_t)~P1_MIC_PWR);
+    write_outputs(P0_OUT, s_p1);
+    DIAG("ioexp: MIC_PWR (P1_7) -> %d\n", on ? 1 : 0);
 }
 
 bool ioexp_init(void) {
     // Default to the CC1101 + 433 MHz antenna (keeps the CC1101 on SPI1 for
     // cc1101_init); main() then auto-selects the antenna per band.
-    uint8_t out[4] = { REG_OUTPUT0, P0_OUT,
-                       (uint8_t)(P1_BASE | ant_bits(ANT_CC1101_433)), P2_OUT };
+    s_p1 = (uint8_t)(P1_BASE | ant_bits(ANT_CC1101_433));   // mic power OFF
+    uint8_t out[4] = { REG_OUTPUT0, P0_OUT, s_p1, P2_OUT };
     uint8_t cfg[4] = { REG_CONFIG0, 0x00, 0x00, 0x04 };   // all output except MCLR (P2_2)
     // Outputs FIRST, then directions (glitch-free: a pin drives its latched value
     // only when its direction flips to output; keeps SCREEN_NRST from pulsing low).
