@@ -27,4 +27,8 @@ enum {
 
 bool ioexp_init(void);         // returns true on I2C ACK; defaults to the CC1101 433 antenna
 void ioexp_antenna(uint8_t sel);   // route one of ANT_* (drives V1_1/V2_1)
+// MIC_PWR (P1 bit 7, active-high): power rail for the 4 PDM MEMS microphones.
+// Off at power-on and after ioexp_init(); pdm_capture_init() turns it on and
+// waits ~50 ms for the mics to settle. Preserves the antenna-select bits.
+void ioexp_mic_pwr(bool on);
 #endif
