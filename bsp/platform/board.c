@@ -2,6 +2,7 @@
 // Adapted from evaderkrub/usbcamfw — MIT, (c) 2026 Dave Robins.
 #include "platform/board.h"
 #include "platform/ioexp.h"
+#include "platform/spi_bus.h"
 #include "pico/stdlib.h"
 #include "hardware/clocks.h"
 #include "hardware/gpio.h"
@@ -22,6 +23,11 @@ void board_init(void) {
     // and the LCD shows nothing — the working reference driver does exactly this.
     uint32_t f = clock_get_hz(clk_sys);
     clock_configure(clk_peri, 0, CLOCKS_CLK_PERI_CTRL_AUXSRC_VALUE_CLK_SYS, f, f);
+
+    // Bring up the shared SPI1 bus now that clk_peri is live, so BOTH the display
+    // and a radio-only app (which never calls st7796_init) find the SSP enabled.
+    // Without this, cc1101 SPI reads spin forever on a disabled peripheral.
+    spi_bus_init();
 
     // Park the CC1101 radio's SPI CS high before any LCD traffic so it never
     // drives lines shared with the LCD.

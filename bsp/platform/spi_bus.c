@@ -7,6 +7,18 @@
 
 #define BUS_SPI spi1
 
+// Enable the SPI1 SSP and route the shared SCK/MOSI to it (12 mA, matching the
+// display's proven drive). GPIO8 (LCD_DC / CC1101 MISO) is muxed per-transaction by
+// the arbiter, not here. Idempotent: st7796_init() also does this, so a display app
+// simply re-inits the SSP to the same config — harmless, nothing is mid-transfer.
+void spi_bus_init(void) {
+    spi_init(BUS_SPI, LCD_SPI_BAUD);                     // enable SSP; 8-bit mode-0 MSB-first
+    gpio_set_function(PIN_LCD_SCLK, GPIO_FUNC_SPI);      // GPIO10 = SPI1 SCK
+    gpio_set_function(PIN_LCD_MOSI, GPIO_FUNC_SPI);      // GPIO11 = SPI1 TX
+    gpio_set_drive_strength(PIN_LCD_SCLK, GPIO_DRIVE_STRENGTH_12MA);
+    gpio_set_drive_strength(PIN_LCD_MOSI, GPIO_DRIVE_STRENGTH_12MA);
+}
+
 // GPIO 8 is shared: it is the LCD DC line (an OUTPUT, driven by the display) by
 // default, and the CC1101's MISO/SO (an INPUT, SPI1 RX) while the radio is on the
 // bus. The arbiter switches the pin's function around every CC1101 transaction:
