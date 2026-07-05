@@ -122,3 +122,11 @@ target_include_directories(test_bmm350_comp PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../bsp
     ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME bmm350_comp COMMAND test_bmm350_comp)
+
+add_executable(test_palette
+    test_palette.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp/gfx/palette.c)
+target_include_directories(test_palette PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME palette COMMAND test_palette)
