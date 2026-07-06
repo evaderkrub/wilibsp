@@ -62,7 +62,18 @@ init→start→poll→decode / encode→send shape, unchanged by the harvest.)
 
 - **pio2 SM0** (capture) **+ SM1** (TX carrier modulator) — a consequence of
   init order (`ir_capture_init()` before `ir_tx_init()`), not a hardware
-  requirement; pio0/pio1 stay free for other consumers.
+  requirement. pio0/pio1 are committed elsewhere in this repo (pio0 = audio
+  I2S, pio1 = WS2812 LEDs), not free — but the real constraint is that
+  **pio2 is shared with `bsp/radio/gdo_capture.c`** (radio GDO0 capture also
+  runs on pio2). Instruction memory is tight: `gdo_capture` (11) +
+  `ir_capture` (11) + `ir_tx` (9) = 31 of pio2's 32 instruction slots, 1
+  free. **Init-order rule:** an app combining radio and IR must call
+  `gdo_capture_init()` before `ir_capture_init()`/`ir_tx_init()` —
+  `gdo_capture_init()`'s `pio_set_gpio_base(pio2, 16)` call must run before
+  any other program occupies pio2's instruction memory, or the SDK call
+  fails silently and radio ends up capturing the wrong pin (see
+  `docs/hardware/facts.md` § "pio2 cohabitation: radio + IR"). No current
+  app in this repo combines radio and IR.
 - **2 DMA channels**, one per direction: an endless ring for capture, a
   one-shot streamer for TX duration words.
 - **Polled, no IRQs** — matches the `gdo_capture`/`pdm_capture` precedent on
@@ -78,9 +89,13 @@ init→start→poll→decode / encode→send shape, unchanged by the harvest.)
   bring-up (tens of ms) ran first and incidentally gave the rail time to
   stabilize. Any consumer that calls `ir_capture_init()` earlier in boot (a
   minimal test harness, no display bring-up first) should add an explicit
-  settle delay rather than rely on that ordering; `apps/hello_ir` reproduces
-  WiliIR's own ordering (settles ~5 ms before `ir_tx_init()`), so this has
-  not been re-tested under a harness that calls it first.
+  settle delay rather than rely on that ordering. `apps/hello_ir` **is**
+  that minimal no-display harness — RTT-only, no LVGL/display bring-up — and
+  it adds an explicit `sleep_ms(5)` between `ir_capture_init()` and
+  `ir_tx_init()` precisely because there's no display init to hide behind
+  (see `apps/hello_ir/main.c`). This has been hardware-verified: six clean
+  NEC TX→RX loopback pairs over a 20 s RTT window, `ovr 0` throughout (see
+  `.superpowers/sdd/task-3-report.md`).
 
 ## Tests
 

@@ -207,11 +207,36 @@ gravity vector PASS; human stimulus tests pending — see
 so it can reach GDO0 = GPIO32 (the PIO GPIO-base window must move to 16..47).
 `pio_set_gpio_base` shifts the base for the WHOLE PIO block, so this cannot run on
 `pio0` (audio I2S, GPIO 4–7) or `pio1` (WS2812 LEDs, GPIO 21) without breaking their
-low-GPIO access. `pio2` is otherwise unused. The BSP is built with
+low-GPIO access. The BSP is built with
 `PICO_PIO_USE_GPIO_BASE=1` (a PUBLIC compile def on `freewili2_bsp`) — required for any
 GPIO≥32 PIO access. The subghz source used `pio0`; the `pio0`→`pio2` change is the only
 functional edit made during the harvest. GDO2 (GPIO37) remains unused. The capture DMA
 is ENDLESS and polled (`write_addr`), so it registers no `DMA_IRQ_0` handler.
+
+### pio2 cohabitation: radio + IR (harvest, 2026-07-06)
+
+`pio2` is no longer radio-exclusive: the harvested `bsp/ir/` driver also runs
+on it — `ir_capture_init()` claims SM0 (`ir_capture.pio`), `ir_tx_init()`
+claims SM1 (`ir_tx.pio`). Across all three programs that can live on pio2 —
+`gdo_capture` (11 instructions), `ir_capture` (11 instructions), `ir_tx` (9
+instructions; confirmed via the generated `build/bsp/ir_tx.pio.h`'s
+`.length = 9`, not the 8 an earlier estimate assumed) — pio2's 32-instruction
+memory holds **31 of 32 slots**, 1 free.
+
+**Init-order hazard:** `gdo_capture_init()` calls `pio_set_gpio_base(pio2, 16)`
+to reach GDO0 = GPIO32, but does not check that call's return value. The Pico
+SDK's `pio_set_gpio_base()` fails once any program already occupies pio2's
+instruction memory — the base can only be (re)set before the PIO block holds
+program data. So if an app calls `ir_capture_init()`/`ir_tx_init()` (which
+load `ir_capture`/`ir_tx` into pio2) **before** `gdo_capture_init()`, the
+later `pio_set_gpio_base(pio2, 16)` call silently fails, the gpio_base stays
+at 0, and `gdo_capture` silently ends up capturing the wrong pin instead of
+GDO0 = GPIO32 — no crash, no diagnostic, just wrong data. Radio-first
+ordering (`gdo_capture_init()` before `ir_capture_init()`/`ir_tx_init()`)
+avoids this because IR's pins (GPIO20/24) remain reachable from the
+gpio_base=16 window the radio path establishes. **Any app that combines
+radio and IR must call `gdo_capture_init()` first.** No current app in this
+repo combines the two (see `docs/drivers/ir.md` § Dependencies).
 
 ## PDM microphones (increment 2, 2026-07-04)
 
