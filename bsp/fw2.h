@@ -39,4 +39,6 @@
 #include "ir/ir_file.h"      // (harvested: Flipper .ir parser/writer, pure)
 #include "ir/ir_resolve.h"   // (harvested: .ir entry -> timings resolver, pure)
 
+#include "usbhost/usb_store.h"  // (harvested: USB thumb-drive mount manager, WiliIR/usbmsc)
+
 #endif // FW2_H

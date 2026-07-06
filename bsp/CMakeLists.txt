@@ -42,12 +42,22 @@ add_library(freewili2_bsp STATIC
     ir/ir_capture.c
     ir/ir_tx.c
     gfx/palette.c
+    usbhost/usb_core.c
+    usbhost/usb_hcd.c
+    usbhost/usb_hub.c
+    usbhost/usb_msc.c
+    usbhost/usb_parse.c
+    usbhost/msc_disk.c
+    usbhost/usb_store.c
+    third_party/fatfs/ff.c
+    third_party/fatfs/ffunicode.c
     third_party/segger_rtt/SEGGER_RTT.c
     third_party/segger_rtt/SEGGER_RTT_printf.c)
 
 target_include_directories(freewili2_bsp PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/segger_rtt)
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/segger_rtt
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/fatfs)
 
 target_link_libraries(freewili2_bsp PUBLIC
     pico_stdlib
