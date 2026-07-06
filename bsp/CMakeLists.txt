@@ -31,6 +31,14 @@ add_library(freewili2_bsp STATIC
     sensors/bmi323.c
     sensors/bmm350.c
     sensors/bmm350_comp.c
+    ir/ir_protocols.c
+    ir/ir_decode.c
+    ir/ir_encode.c
+    ir/ir_frame.c
+    ir/ir_tx_pack.c
+    ir/ir_file.c
+    ir/ir_resolve.c
+    ir/db_sort.c
     gfx/palette.c
     third_party/segger_rtt/SEGGER_RTT.c
     third_party/segger_rtt/SEGGER_RTT_printf.c)

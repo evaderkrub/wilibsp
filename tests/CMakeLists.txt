@@ -130,3 +130,49 @@ target_include_directories(test_palette PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../bsp
     ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME palette COMMAND test_palette)
+
+# --- bsp/ir pure-logic group (harvested from WiliIR; see docs/drivers/ir.md) ---
+set(BSPIR ${CMAKE_CURRENT_SOURCE_DIR}/../bsp/ir)
+add_executable(test_ir_nec test_ir_nec.c ${BSPIR}/ir_decode.c ${BSPIR}/ir_encode.c ${BSPIR}/ir_protocols.c)
+target_include_directories(test_ir_nec PRIVATE ${BSPIR} ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME ir_nec COMMAND test_ir_nec)
+
+add_executable(test_ir_pd test_ir_pd.c ${BSPIR}/ir_decode.c ${BSPIR}/ir_encode.c ${BSPIR}/ir_protocols.c)
+target_include_directories(test_ir_pd PRIVATE ${BSPIR} ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME ir_pd COMMAND test_ir_pd)
+
+add_executable(test_ir_manchester test_ir_manchester.c ${BSPIR}/ir_decode.c ${BSPIR}/ir_encode.c ${BSPIR}/ir_protocols.c)
+target_include_directories(test_ir_manchester PRIVATE ${BSPIR} ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME ir_manchester COMMAND test_ir_manchester)
+
+add_executable(test_ir_kaseikyo test_ir_kaseikyo.c ${BSPIR}/ir_decode.c ${BSPIR}/ir_encode.c ${BSPIR}/ir_protocols.c)
+target_include_directories(test_ir_kaseikyo PRIVATE ${BSPIR} ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME ir_kaseikyo COMMAND test_ir_kaseikyo)
+
+add_executable(test_ir_dispatch test_ir_dispatch.c ${BSPIR}/ir_decode.c ${BSPIR}/ir_encode.c ${BSPIR}/ir_protocols.c)
+target_include_directories(test_ir_dispatch PRIVATE ${BSPIR} ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME ir_dispatch COMMAND test_ir_dispatch)
+
+add_executable(test_ir_frame test_ir_frame.c ${BSPIR}/ir_decode.c ${BSPIR}/ir_encode.c ${BSPIR}/ir_protocols.c ${BSPIR}/ir_frame.c)
+target_include_directories(test_ir_frame PRIVATE ${BSPIR} ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME ir_frame COMMAND test_ir_frame)
+
+add_executable(test_ir_tx_pack test_ir_tx_pack.c ${BSPIR}/ir_tx_pack.c)
+target_include_directories(test_ir_tx_pack PRIVATE ${BSPIR} ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME ir_tx_pack COMMAND test_ir_tx_pack)
+
+add_executable(test_ir_file test_ir_file.c ${BSPIR}/ir_file.c ${BSPIR}/ir_protocols.c)
+target_include_directories(test_ir_file PRIVATE ${BSPIR} ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME ir_file COMMAND test_ir_file)
+
+add_executable(test_db_sort test_db_sort.c ${BSPIR}/db_sort.c)
+target_include_directories(test_db_sort PRIVATE ${BSPIR} ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME db_sort COMMAND test_db_sort)
+
+add_executable(test_ir_golden test_ir_golden.c ${BSPIR}/ir_decode.c ${BSPIR}/ir_protocols.c)
+target_include_directories(test_ir_golden PRIVATE ${BSPIR} ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME ir_golden COMMAND test_ir_golden)
+
+add_executable(test_ir_resolve test_ir_resolve.c ${BSPIR}/ir_resolve.c ${BSPIR}/ir_encode.c ${BSPIR}/ir_decode.c ${BSPIR}/ir_protocols.c)
+target_include_directories(test_ir_resolve PRIVATE ${BSPIR} ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME ir_resolve COMMAND test_ir_resolve)
