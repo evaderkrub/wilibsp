@@ -1,0 +1,4 @@
+add_executable(hello_usbdrive main.c)
+target_link_libraries(hello_usbdrive freewili2_bsp)
+pico_set_binary_type(hello_usbdrive copy_to_ram)
+pico_add_extra_outputs(hello_usbdrive)
