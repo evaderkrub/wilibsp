@@ -1,8 +1,8 @@
 // hello_usbdrive — on-hardware smoke test for the harvested USB host MSC
 // stack (bsp/usbhost) + FatFs. RTT-only. Powers the HP1/HP2 ports, polls the
 // host stack, and on every mount edge prints the volume root listing (the
-// usb_store DIAGs) plus a recursive count of *.ir files in the top two
-// levels as a FatFs read exercise.
+// usb_store DIAGs) plus a non-recursive count of *.ir files at the volume
+// root as a FatFs read exercise.
 // Pass criteria with a FAT32 stick seated: "mount OK" + root listing within
 // a few seconds of boot; pull/replug -> "drive removed" then a clean
 // remount. No stick: the power-gate DIAG appears, nothing else — no crash.

@@ -1,4 +1,4 @@
-; src/ir/ir_tx.pio — carrier-gated mark/space player.
+; bsp/ir/ir_tx.pio — carrier-gated mark/space player.
 ; One FIFO word per segment: bits[30:0] = carrier periods - 1, bit[31] = mark.
 ; SM runs at 12 ticks per carrier period (clkdiv = clk_sys / (12 * carrier_hz)).
 ; Marks: 4 ticks high / 8 low per period (33% duty). Spaces: 12 ticks low.

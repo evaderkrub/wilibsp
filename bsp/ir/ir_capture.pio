@@ -1,4 +1,4 @@
-; src/ir/ir_capture.pio
+; bsp/ir/ir_capture.pio
 ; Measure how long PIN_IR_RX holds each level, pushing one word per edge. x counts
 ; DOWN from 0xFFFFFFFF; `mov isr, ~x` yields the elapsed loop count (~= ticks).
 ; Each measure loop is 2 PIO cycles, so run the SM at 2 MHz (clkdiv 125 @ 250 MHz)

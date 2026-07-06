@@ -34,6 +34,8 @@ against `board.h` again once that peripheral gets a driver, since
 | `PIN_MIC_CLK` | 28 | PDM mic array (shared clock out) | `pio1` side-set, 1.024 MHz (NOT 3.072 — see facts.md) |
 | `PIN_MIC_SIG1` | 29 | PDM data line 1 | Mic A (clk-high) + Mic B (clk-low); consecutive with SIG2 for `in pins, 2` |
 | `PIN_MIC_SIG2` | 30 | PDM data line 2 | Mic C (clk-high) + Mic D (clk-low) |
+| `PIN_IR_TX` | 20 | IR transmitter LED | PIO carrier-modulated, `pio2` SM1 + 1 DMA channel; gated by `ioexp_ir_pwr()` (PCAL6524 P2_0, off at power-on) |
+| `PIN_IR_RX` | 24 | IR receiver | TSOP-style demodulated envelope: idle HIGH, mark = LOW; `pio2` SM0 + 1 DMA channel (endless ring, polled); same `ioexp_ir_pwr()` gate as TX |
 
 SPI1 baud rates (shared bus, from `board.h`): LCD 100 MHz
 (`LCD_SPI_BAUD`, divider-limited by `clk_peri`), CC1101 5 MHz
@@ -53,8 +55,6 @@ once each one gets a driver** — do not assume `FwDisplayVibe.md` is exact
 
 | Signal | GPIO | Peripheral | Driver status |
 |---|---|---|---|
-| IR TX | 20 | IR transmitter | TODO |
-| IR RX | 24 | IR receiver | TODO |
 | DVI_CLK_N | 12 | HSTX DVI | TODO |
 | DVI_CLK_P | 13 | HSTX DVI | TODO |
 | DVI_D0_N | 14 | HSTX DVI | TODO |

@@ -21,19 +21,21 @@ procedure once you've picked a row.
 | Humidity/temp — SHT40-AD1B | `bsp/sensors/sht40.{c,h}` | I2C1 addr 0x44, CRC-8-checked high-precision measure (~10 ms blocking). Harvested verbatim from `sensorview`. Demo: `apps/hello_sensors`. |
 | IMU — BMI323 | `bsp/sensors/bmi323.{c,h}` | I2C1 addr 0x68, chip-id 0x43, ±4 g / ±500 dps @ 100 Hz; 16-bit LE regs, reads carry 2 leading dummy bytes. Harvested verbatim from `sensorview`. Demo: `apps/hello_sensors`. |
 | Magnetometer — BMM350 | `bsp/sensors/{bmm350,bmm350_comp}.{c,h}` | I2C1 addr 0x14, chip-id 0x33; full OTP download + Bosch compensation → µT (+ sqrtf magnitude); reads carry 2 leading dummy bytes. Init ≈ 130 ms of settles. Harvested verbatim from `sensorview`. Demo: `apps/hello_sensors`. |
+| IR TX/RX | `bsp/ir/{ir_capture,ir_tx,ir_decode,ir_encode,ir_protocols,ir_frame,ir_tx_pack,ir_file,db_sort,ir_resolve}.{c,h}`, `bsp/ir/{ir_capture,ir_tx}.pio` | TX=GPIO20 (`PIN_IR_TX`, pio2 SM1 + 1 DMA), RX=GPIO24 (`PIN_IR_RX`, pio2 SM0 + 1 DMA), both polled/no-IRQ. Gated by `ioexp_ir_pwr()` (PCAL6524 P2_0, off at power-on). Harvested from `WiliIR` (which also vendored `usbmsc` for USB and proved the whole stack on hardware 2026-07-05/06). Demo: `apps/hello_ir`. |
+| USB host MSC (thumb drive) | `bsp/usbhost/{usb_core,usb_hcd,usb_hub,usb_msc,usb_parse,msc_disk,usb_store}.{c,h}` + `bsp/third_party/fatfs/*` | Native RP2350 USB controller in host mode (mutually exclusive with TinyUSB device mode), CH334F hub, single hub tier only, polled/no-IRQ. Gated by `ioexp_usb_pwr()` (PCAL6524 P0_0 = HP1 + P1_4 = HP2, off at power-on). Harvested from `WiliIR`, origin the owner's `usbmsc` driver (vendored verbatim into WiliIR, then carried here unmodified). Demo: `apps/hello_usbdrive`. |
 
-These eleven are exactly what `bsp/CMakeLists.txt` compiles into
-`freewili2_bsp` today (plus `third_party/segger_rtt`) and exactly what
-`bsp/fw2.h` includes. (`platform/*.c`, `display/*.c`, `input/*.c`, `leds/*.c`,
-`audio/*.c`, `radio/*.c`, `pdm/*.c`, `dsp/*.c`, `sensors/*.c`, plus
-`i2s_duplex.pio.h` and `gdo_capture.pio.h` generation)
+These thirteen are exactly what `bsp/CMakeLists.txt` compiles into
+`freewili2_bsp` today (plus `third_party/segger_rtt` and `third_party/fatfs`)
+and exactly what `bsp/fw2.h` includes. (`platform/*.c`, `display/*.c`,
+`input/*.c`, `leds/*.c`, `audio/*.c`, `radio/*.c`, `pdm/*.c`, `dsp/*.c`,
+`sensors/*.c`, `ir/*.c`, `usbhost/*.c`, plus `i2s_duplex.pio.h`,
+`gdo_capture.pio.h`, `ir_capture.pio.h`, and `ir_tx.pio.h` generation)
 
 ## TODO (future add-driver increments)
 
 | Peripheral | GPIOs / bus (source: `FwDisplayVibe.md` unless noted) | Harvest from |
 |---|---|---|
 | NFC — ST25R3916B | I2C1 (SDA=26/SCL=27) | `subghz`/`sensorview` (check which owns an NFC driver; not confirmed at catalog time) |
-| IR TX/RX | TX=GPIO20, RX=GPIO24 | `sensorview` or a new harvest — owner repo not yet confirmed |
 | DVI / HSTX | DVI_CLK_N/P=12/13, DVI_D0_N/P=14/15, DVI_D1_N/P=16/17, DVI_D2_N/P=18/19 | Owner repo not yet confirmed (HSTX peripheral, likely a fresh Pico SDK HSTX example port) |
 | 14-button serial coprocessor | TX=GPIO38, RX=GPIO39 (UART) | Owner repo not yet confirmed — buttons: Up, Down, Left, Right, Center, Home, OK, Cancel, Page, Grey, Yellow, Green, Blue, Red |
 | Pico-PIO-USB (USB host via PIO) | D+=GPIO42, D-=GPIO43; 1.5K D+ pullup enabled via the I/O expander | `usbcamfw` / `wili8c` |
@@ -46,13 +48,14 @@ These eleven are exactly what `bsp/CMakeLists.txt` compiles into
 
 ## Confirming this catalog
 
-Exactly eleven peripherals are marked `DONE` above: **platform, display
+Exactly thirteen peripherals are marked `DONE` above: **platform, display
 (ST7796), touch (FT6336), LEDs (WS2812 x16), audio (I2S full-duplex), radio
 (CC1101), PDM microphones, ambient light (OPT4001), humidity/temp (SHT40),
-IMU (BMI323), magnetometer (BMM350)**. This matches the source list compiled
-by `bsp/CMakeLists.txt` (`platform/*.c`, `display/*.c`, `input/*.c`,
-`leds/*.c`, `audio/*.c`, `radio/*.c`, `pdm/*.c`, `dsp/*.c`, `sensors/*.c`,
-`third_party/segger_rtt/*.c`) and the includes activated in `bsp/fw2.h`. If
+IMU (BMI323), magnetometer (BMM350), IR TX/RX, USB host MSC**. This matches
+the source list compiled by `bsp/CMakeLists.txt` (`platform/*.c`,
+`display/*.c`, `input/*.c`, `leds/*.c`, `audio/*.c`, `radio/*.c`, `pdm/*.c`,
+`dsp/*.c`, `sensors/*.c`, `ir/*.c`, `usbhost/*.c`, `third_party/segger_rtt/*.c`,
+`third_party/fatfs/*.c`) and the includes activated in `bsp/fw2.h`. If
 you add a new `DONE` row, the corresponding source files must already be in
 `bsp/CMakeLists.txt`'s
 `add_library(...)` list and the header must be `#include`d from `bsp/fw2.h`
