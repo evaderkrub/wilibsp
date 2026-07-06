@@ -32,4 +32,11 @@
 #include "sensors/bmm350.h"       // (Increment 4: I2C sensors)
 #include "sensors/bmm350_comp.h"  // (Increment 4: I2C sensors)
 
+#include "ir/ir_capture.h"   // (harvested: IR receiver, PIO2 SM0 + DMA ring, WiliIR)
+#include "ir/ir_tx.h"        // (harvested: IR transmitter, PIO2 SM1 carrier modulator, WiliIR)
+#include "ir/ir_decode.h"    // (harvested: protocol decoders, pure)
+#include "ir/ir_encode.h"    // (harvested: protocol encoders, pure)
+#include "ir/ir_file.h"      // (harvested: Flipper .ir parser/writer, pure)
+#include "ir/ir_resolve.h"   // (harvested: .ir entry -> timings resolver, pure)
+
 #endif // FW2_H

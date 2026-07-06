@@ -39,6 +39,8 @@ add_library(freewili2_bsp STATIC
     ir/ir_file.c
     ir/ir_resolve.c
     ir/db_sort.c
+    ir/ir_capture.c
+    ir/ir_tx.c
     gfx/palette.c
     third_party/segger_rtt/SEGGER_RTT.c
     third_party/segger_rtt/SEGGER_RTT_printf.c)
@@ -75,3 +77,7 @@ pico_generate_pio_header(freewili2_bsp
 # Generate the PDM capture PIO header into the build tree for pdm_capture.c.
 pico_generate_pio_header(freewili2_bsp
     ${CMAKE_CURRENT_SOURCE_DIR}/pdm/pdm_capture.pio)
+
+# Generate the IR PIO headers into the build tree for ir_capture.c and ir_tx.c.
+pico_generate_pio_header(freewili2_bsp ${CMAKE_CURRENT_SOURCE_DIR}/ir/ir_capture.pio)
+pico_generate_pio_header(freewili2_bsp ${CMAKE_CURRENT_SOURCE_DIR}/ir/ir_tx.pio)

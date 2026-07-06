@@ -1,4 +1,4 @@
-// src/platform/ioexp.h — PCAL6524 I/O expander on I2C1 (addr 0x23).
+// bsp/platform/ioexp.h — PCAL6524 I/O expander on I2C1 (addr 0x23).
 //
 // On the FreeWili2 the sub-GHz section has TWO radios (CC1101 + LoRa) selected by
 // the expander pins V1_1 and V2_1: driving BOTH high routes the CC1101 + sub-GHz
@@ -31,4 +31,12 @@ void ioexp_antenna(uint8_t sel);   // route one of ANT_* (drives V1_1/V2_1)
 // Off at power-on and after ioexp_init(); pdm_capture_init() turns it on and
 // waits ~50 ms for the mics to settle. Preserves the antenna-select bits.
 void ioexp_mic_pwr(bool on);
+// IR_PWR (P2 bit 0, active-high): power rail for the IR receiver (and possibly
+// the TX LED driver). Off at power-on and after ioexp_init(); ir_capture_init()
+// turns it on. Pin table: sensorview ioexp_pcal6524.h (IOEXP_IR_PWR = P2_0).
+void ioexp_ir_pwr(bool on);
+// USB host port power (CH334F hub rails): HP1 = P0 bit 0, HP2 = P1 bit 4,
+// both active-high (pin table: sensorview ioexp_pcal6524.h). Off at power-on;
+// usb_store_init() turns both on before enumeration.
+void ioexp_usb_pwr(bool on);
 #endif

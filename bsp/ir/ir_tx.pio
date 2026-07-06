@@ -1,0 +1,32 @@
+; src/ir/ir_tx.pio — carrier-gated mark/space player.
+; One FIFO word per segment: bits[30:0] = carrier periods - 1, bit[31] = mark.
+; SM runs at 12 ticks per carrier period (clkdiv = clk_sys / (12 * carrier_hz)).
+; Marks: 4 ticks high / 8 low per period (33% duty). Spaces: 12 ticks low.
+; FIFO underrun stalls on `out` with the pin low — safe idle between frames.
+.program ir_tx
+.wrap_target
+next_word:
+    out x, 31              ; carrier periods - 1
+    out y, 1               ; mark flag
+    jmp !y space_loop
+mark_loop:
+    set pins, 1 [3]        ; 4 ticks high
+    set pins, 0 [6]        ; 7 ticks low
+    jmp x-- mark_loop      ; 1 tick  -> 12 ticks per carrier period
+    jmp next_word
+space_loop:
+    set pins, 0 [10]       ; 11 ticks low
+    jmp x-- space_loop     ; 1 tick  -> 12 ticks per period
+.wrap
+
+% c-sdk {
+static inline void ir_tx_program_init(PIO pio, uint sm, uint offset, uint pin) {
+    pio_sm_config c = ir_tx_program_get_default_config(offset);
+    sm_config_set_set_pins(&c, pin, 1);
+    sm_config_set_out_shift(&c, true, true, 32);   // shift right + autopull:
+    // out x,31 takes bits[30:0], out y,1 takes bit[31] — matches ir_tx_pack.
+    pio_gpio_init(pio, pin);
+    pio_sm_set_consecutive_pindirs(pio, sm, pin, 1, true);
+    pio_sm_init(pio, sm, offset, &c);
+}
+%}

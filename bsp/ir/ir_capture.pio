@@ -1,0 +1,42 @@
+; src/ir/ir_capture.pio
+; Measure how long PIN_IR_RX holds each level, pushing one word per edge. x counts
+; DOWN from 0xFFFFFFFF; `mov isr, ~x` yields the elapsed loop count (~= ticks).
+; Each measure loop is 2 PIO cycles, so run the SM at 2 MHz (clkdiv 125 @ 250 MHz)
+; for ~1 us ticks. Long levels push values growing toward 0xFFFFFFFF; software
+; treats anything >= 0x40000000 (IR_SAT_US) as idle. At true counter underflow
+; (~71 min of one unbroken level) the program pushes 0 and a spurious 0-length
+; opposite-level word — both are filtered by IR_NOISE_US with mark/space parity
+; preserved. Autopush is disabled; the program manually pushes ISR to the RX
+; FIFO (`push noblock`), which DMA then drains.
+.program ir_capture
+.wrap_target
+    mov x, ~null          ; x = 0xFFFFFFFF
+low_loop:
+    jmp pin low_done      ; pin high -> the low level ended
+    jmp x-- low_loop      ; still low: count down
+low_done:
+    mov isr, ~x           ; isr = elapsed at low
+    push noblock
+    mov x, ~null
+high_loop:
+    jmp pin high_cont     ; pin still high: keep counting
+    jmp high_done         ; pin low -> the high level ended
+high_cont:
+    jmp x-- high_loop
+high_done:
+    mov isr, ~x           ; isr = elapsed at high
+    push noblock
+.wrap
+
+% c-sdk {
+static inline void ir_capture_program_init(PIO pio, uint sm, uint offset, uint pin) {
+    pio_sm_config c = ir_capture_program_get_default_config(offset);
+    sm_config_set_jmp_pin(&c, pin);          // `jmp pin` tests PIN_IR_RX
+    sm_config_set_in_pins(&c, pin);
+    sm_config_set_in_shift(&c, false, false, 32);   // MSB-first, manual push
+    sm_config_set_clkdiv(&c, 125.0f);        // 250 MHz / 125 = 2 MHz -> ~1 us/tick
+    pio_gpio_init(pio, pin);
+    pio_sm_set_consecutive_pindirs(pio, sm, pin, 1, false);  // input
+    pio_sm_init(pio, sm, offset, &c);
+}
+%}

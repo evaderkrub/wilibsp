@@ -24,6 +24,10 @@
 // --- WS2812 RGB LEDs (16 pixels, single data line) ---
 #define PIN_LED_DATA   21   // WS2812 data; driven by a pio1 state machine
 
+// --- IR receiver/transmitter (PIO2 SMs) ---
+#define PIN_IR_TX  20   // IR transmitter LED (PIO carrier-modulated, pio2)
+#define PIN_IR_RX  24   // IR receiver, TSOP-style demodulated envelope: idle HIGH, mark = LOW
+
 // --- I2C1 (touch, sensors) ---
 #define PIN_I2C1_SDA   26
 #define PIN_I2C1_SCL   27

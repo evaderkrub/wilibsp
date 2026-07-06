@@ -1,4 +1,4 @@
-// src/platform/ioexp.c — minimal PCAL6524 bring-up for the FreeWili2 display board.
+// bsp/platform/ioexp.c — minimal PCAL6524 bring-up for the FreeWili2 display board.
 // See ioexp.h.
 //
 // The CC1101 shares SPI1 SCLK/MOSI/MISO with the LCD (MISO is GPIO8, muxed by the
@@ -27,10 +27,18 @@
 // verified). The CC1101 MISO direction is handled on the RP2350 side: the spi_bus
 // arbiter switches GPIO8 between DC output and SPI RX input per transaction.
 #define P0_OUT    0xF0
-#define P2_OUT    0x00
+
+// Shadow of the Port-0 output byte: SPI1 buffer dirs + USB host port 1 power.
+// Default matches ioexp_init(): HP1 OFF.
+#define P0_HP1_EN 0x01   // P0 bit 0: USB host port 1 power, active-high
+static uint8_t s_p0 = P0_OUT;
+
+// Shadow of the Port-2 output byte. Default matches ioexp_init(): IR power OFF.
+#define P2_IR_PWR 0x01  // P2 bit 0, active-high IR power (pin table: sensorview ioexp_pcal6524.h)
+static uint8_t s_p2 = 0x00;
 
 static void write_outputs(uint8_t p0, uint8_t p1) {
-    uint8_t out[4] = { REG_OUTPUT0, p0, p1, P2_OUT };
+    uint8_t out[4] = { REG_OUTPUT0, p0, p1, s_p2 };
     i2c_write_blocking(IOEXP_I2C, IOEXP_ADDR, out, 4, false);
 }
 
@@ -42,25 +50,41 @@ static uint8_t ant_bits(uint8_t sel) {
 // Shadow of the Port-1 output byte: base control bits + antenna select + MIC_PWR.
 // Default matches ioexp_init(): CC1101 433 antenna, mic power OFF.
 #define P1_MIC_PWR 0x80   // P1 bit 7, active-high mic rail
+#define P1_HP2_EN 0x10    // P1 bit 4: USB host port 2 power, active-high
 #define P1_ANT_MASK 0x0A  // V1_1 (bit3) | V2_1 (bit1)
 static uint8_t s_p1 = P1_BASE | 0x08;   // == P1_BASE | ant_bits(ANT_CC1101_433)
 
 void ioexp_antenna(uint8_t sel) {
     s_p1 = (uint8_t)((s_p1 & (uint8_t)~P1_ANT_MASK) | ant_bits(sel));
-    write_outputs(P0_OUT, s_p1);
+    write_outputs(s_p0, s_p1);
 }
 
 void ioexp_mic_pwr(bool on) {
     s_p1 = on ? (uint8_t)(s_p1 | P1_MIC_PWR) : (uint8_t)(s_p1 & (uint8_t)~P1_MIC_PWR);
-    write_outputs(P0_OUT, s_p1);
+    write_outputs(s_p0, s_p1);
     DIAG("ioexp: MIC_PWR (P1_7) -> %d\n", on ? 1 : 0);
+}
+
+void ioexp_ir_pwr(bool on) {
+    s_p2 = on ? (uint8_t)(s_p2 | P2_IR_PWR) : (uint8_t)(s_p2 & (uint8_t)~P2_IR_PWR);
+    write_outputs(s_p0, s_p1);
+    DIAG("ioexp: IR_PWR (P2_0) -> %d\n", on ? 1 : 0);
+}
+
+void ioexp_usb_pwr(bool on) {
+    s_p0 = on ? (uint8_t)(s_p0 | P0_HP1_EN) : (uint8_t)(s_p0 & (uint8_t)~P0_HP1_EN);
+    s_p1 = on ? (uint8_t)(s_p1 | P1_HP2_EN) : (uint8_t)(s_p1 & (uint8_t)~P1_HP2_EN);
+    write_outputs(s_p0, s_p1);
+    DIAG("ioexp: USB HP1(P0_0)+HP2(P1_4) -> %d\n", on ? 1 : 0);
 }
 
 bool ioexp_init(void) {
     // Default to the CC1101 + 433 MHz antenna (keeps the CC1101 on SPI1 for
     // cc1101_init); main() then auto-selects the antenna per band.
-    s_p1 = (uint8_t)(P1_BASE | ant_bits(ANT_CC1101_433));   // mic power OFF
-    uint8_t out[4] = { REG_OUTPUT0, P0_OUT, s_p1, P2_OUT };
+    s_p0 = P0_OUT;                                          // HP1 (USB) power OFF
+    s_p1 = (uint8_t)(P1_BASE | ant_bits(ANT_CC1101_433));   // mic + HP2 (USB) power OFF
+    s_p2 = 0x00;                                            // IR power OFF
+    uint8_t out[4] = { REG_OUTPUT0, s_p0, s_p1, s_p2 };
     uint8_t cfg[4] = { REG_CONFIG0, 0x00, 0x00, 0x04 };   // all output except MCLR (P2_2)
     // Outputs FIRST, then directions (glitch-free: a pin drives its latched value
     // only when its direction flips to output; keeps SCREEN_NRST from pulsing low).
