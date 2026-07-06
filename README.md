@@ -5,11 +5,19 @@ GPIO, 16 MB flash, 8 MB PSRAM): a shared `freewili2_bsp` CMake static
 library, a set of apps, and a cross-platform `fw` CLI to build/flash/test
 them.
 
-The board drives a 480x320 ST7796-class touch LCD, 16 on-board WS2812 RGB
-LEDs, and (deferred to future work) a CC1101 sub-GHz radio, NFC, IR,
-DVI/HSTX video-out, I2S audio, PDM mics, a 14-button coprocessor,
-Pico-PIO-USB, and several I2C sensors. See
-`docs/hardware/catalog.md` for what's driven today vs. what's still `TODO`.
+Driven today: the 480x320 ST7796-class touch LCD, FT6336U touch, 16 WS2812
+RGB LEDs, full-duplex I2S audio (NAU88C10), the CC1101 sub-GHz radio, the
+4-mic PDM array, four I2C sensors (OPT4001 light, SHT40 humidity/temp,
+BMI323 IMU, BMM350 magnetometer), IR receive/decode/encode/transmit (with a
+Flipper-`.ir` parser/writer), and a polled native-USB host MSC stack
+(thumb drives, no TinyUSB) with FatFs. Still `TODO`: NFC, DVI/HSTX
+video-out, the 14-button coprocessor, and Pico-PIO-USB. See
+[`docs/hardware/catalog.md`](./docs/hardware/catalog.md) for the full
+peripheral → driver → provenance table, and `docs/drivers/` for per-driver
+usage docs. Each driver ships with an `apps/hello_*` on-hardware smoke
+test; the pure-logic layers (DSP, palettes, IR protocol codecs, `.ir`
+parsing, sensor compensation) are host-unit-tested with no hardware or
+Pico SDK needed.
 
 **Agents:** read [`AGENTS.md`](./AGENTS.md) first — it's the dense
 orientation doc (command table, hardware invariants, how to add a driver).
@@ -46,10 +54,14 @@ fw new-app my_app
 # then add `add_subdirectory(apps/my_app)` to the top-level CMakeLists.txt
 ```
 
-**Status:** BSP + `hello_display` smoke app build cleanly (`fw build`,
-`fw test`). Actual on-hardware verification (Task 9 of the implementation
-plan) has not run yet — see `docs/hardware/facts.md` for what's confirmed
-by source vs. what's still pending a physical board.
+**Status:** every harvested driver group has passed its `hello_*` smoke
+test on a physical board (most recently `hello_ir`'s TX→RX loopback and
+`hello_usbdrive`'s thumb-drive mount, 2026-07-06). The host test tree is at
+26 green binaries. `docs/hardware/facts.md` records the hard-won invariants
+— shared SPI1 arbitration, shared DMA_IRQ_0 ownership, pio2 cohabitation
+(radio GDO capture + IR, radio inits first), the power-gated rails on the
+PCAL6524 I/O expander — and keeps claims scoped to what a bench session
+actually demonstrated.
 
 ## Repo map
 
@@ -65,16 +77,26 @@ wilibsp/
     display/                  ST7796 480x320 LCD driver + 5x7 font
     input/                    FT6336U capacitive touch driver
     leds/                     WS2812 x16 driver + led_color/led_ui helpers
-    gfx/                      color palette header (inferno_rgb565 — see facts.md)
+    gfx/                      color palettes (host-tested)
+    audio/                    NAU88C10 I2S full-duplex + capture/tone/VU helpers
+    radio/                    CC1101 sub-GHz: regs, GDO capture, OOK TX, engines
+    pdm/ dsp/                 4-mic PDM array + integer CIC/DC-block filters
+    sensors/                  OPT4001, SHT40, BMI323, BMM350(+compensation)
+    ir/                       IR capture/TX (pio2) + protocol codecs + .ir files
+    usbhost/                  polled native-USB host MSC (no TinyUSB) + FatFs glue
     third_party/segger_rtt/   SEGGER RTT (vendored)
+    third_party/fatfs/        FatFs R0.15b (vendored)
   apps/
     template/                 starter app — `fw new-app` copies this
-    hello_display/            v1 on-hardware smoke test (display + touch + LEDs)
+    hello_display/            display + touch + LEDs smoke test
+    hello_audio/ hello_cc1101/ hello_mics/ hello_sensors/
+    hello_ir/                 NEC TX->RX loopback + live decode
+    hello_usbdrive/           thumb-drive mount + root listing
   tools/                      fw CLI (fw.py) + POSIX/Windows launchers + its own pytest
   tests/                      standalone host CTest tree (no Pico SDK, no hardware)
   docs/
     hardware/                 pinmap.md, facts.md, catalog.md
-    drivers/                  platform.md, display.md, touch.md, leds.md
+    drivers/                  per-driver usage docs (platform ... ir, usbhost)
     superpowers/plans/        the full implementation plan / spec
   skills/
     freewili2-new-app/        Claude Code skill: scaffold a new app
@@ -96,3 +118,10 @@ wilibsp/
   driver status → harvest source.
 - [`docs/superpowers/plans/2026-07-01-freewili2-bsp.md`](./docs/superpowers/plans/2026-07-01-freewili2-bsp.md)
   — the full implementation plan this repo was built from.
+
+## License
+
+MIT — see [LICENSE](LICENSE). Vendored third-party components (SEGGER RTT,
+FatFs) keep their own permissive licenses, noted in the LICENSE file and in
+the vendored file headers. Harvested drivers carry the MIT/BSD-3-Clause
+terms of their source repos where noted.
