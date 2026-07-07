@@ -176,3 +176,12 @@ add_test(NAME ir_golden COMMAND test_ir_golden)
 add_executable(test_ir_resolve test_ir_resolve.c ${BSPIR}/ir_resolve.c ${BSPIR}/ir_encode.c ${BSPIR}/ir_decode.c ${BSPIR}/ir_protocols.c)
 target_include_directories(test_ir_resolve PRIVATE ${BSPIR} ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME ir_resolve COMMAND test_ir_resolve)
+
+add_executable(test_dvi_osd
+    test_dvi_osd.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp/display/dvi_osd.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp/display/font5x7.c)
+target_include_directories(test_dvi_osd PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME dvi_osd COMMAND test_dvi_osd)
