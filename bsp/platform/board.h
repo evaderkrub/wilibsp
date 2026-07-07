@@ -83,7 +83,7 @@ void board_init_clk(uint32_t sys_clock_khz);
 // Backlight: 0 = off, nonzero = on (plain GPIO).
 void board_backlight_set(uint8_t level);
 
-// I2C1 @ 400 kHz on GPIO 26 (SDA) / 27 (SCL). Called from board_init().
+// I2C1 @ 400 kHz on GPIO 26 (SDA) / 27 (SCL). Called from board_init_clk().
 void board_i2c1_init(void);
 
 #endif
