@@ -14,13 +14,19 @@ reusable driver, with a `hello_dvi` demo app. The player's HDMI-audio-island mod
   `hstx_audio_islands` builders, the `hdmi_audio_ring` coupling, and the player-specific
   SRAM `hstx_arena` union (which aliases USB/FatFs/mic buffers and would drag half the
   player's memory layout into the BSP).
-- **Clock: bump the board to 252 MHz.** `hstx_dvi` derives `clk_hstx = clk_sys / 2`, and
-  the HSTX CSR `CLKDIV = 5` gives `clk_hstx / 5` as the pixel clock. At the BSP's current
-  250 MHz that is 25.0 MHz (0.7% below the 640×480p60 standard 25.175 MHz); at 252 MHz it
-  is exactly 25.2 MHz — the value the movie player proved. 252 MHz is already validated on
-  this exact board (movie player, at 1.25 V Vcore) across USB host, PSRAM, audio, and
-  decode; the historical "252 fault" was marginal Vcore at 1.15 V, since fixed. So the
-  board moves to 252 MHz and **invariant 2 is revised** accordingly.
+- **Clock: project-selectable, default 250 MHz.** `hstx_dvi` derives `clk_hstx = clk_sys / 2`,
+  and the HSTX CSR `CLKDIV = 5` gives `clk_hstx / 5` as the pixel clock. At 250 MHz that is
+  25.0 MHz (0.7% below the 640×480p60 standard 25.175 MHz, but within most monitors'
+  tolerance); at 252 MHz it is exactly 25.2 MHz — the value the movie player proved.
+  > **REVISED (during execution):** the original decision was to bump the board globally to
+  > 252 MHz. That was reconsidered because **250 MHz is audio-optimal** — the NAU88C10 MCLK
+  > (`clk_sys/61`) lands near-exactly on 16 kHz fs only at 250 MHz; 252 MHz shifts audio
+  > pitch ~0.8%. And `board.c` lives in the shared static lib, so the clock can't be a
+  > per-app `-D`. Resolution: keep the board **default at 250 MHz** (invariant 2 default
+  > unchanged, audio + all existing apps untouched) and add a runtime override
+  > `board_init_clk(uint32_t khz)`; `board_init() == board_init_clk(250000)`. The DVI demo
+  > calls `board_init_clk(252000)` to get the exact 25.2 MHz pixel clock. The DVI driver
+  > reads `clk_sys` at runtime, so it works at either clock. See the plan's Task 1/Task 4.
 - **Stored region 480×320 (full panel).** With the player's SRAM-arena constraint gone
   (it capped the stored height at 272), the BSP driver restores a clean full-panel cap:
   `HSTX_VID_W_MAX = 480`, `HSTX_VID_H_MAX = 320`, a compile-time `#define`. The ≤480×320

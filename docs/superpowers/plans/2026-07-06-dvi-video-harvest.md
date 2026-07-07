@@ -4,7 +4,7 @@
 
 **Goal:** Harvest the movie player's plain 640×480p60 DVI-over-HSTX video output (GPIO 12–19) plus its software OSD into `freewili2_bsp`, with a `hello_dvi` demo app, stripping out the HDMI-audio-island path.
 
-**Architecture:** Copy the proven plain-DVI scanout driver and pure OSD rasterizer from `../movieplayer/src/display/` into `bsp/display/`, dropping the compiled-in HDMI-audio path (islands, `pico_hdmi`, `hdmi_audio_ring`, the SRAM arena). The driver turns an SRAM framebuffer into a zero-IRQ DMA scanout; the app writes native-endian RGB565 pixels into a strided video region and HSTX serialises them. Bump the board clock to 252 MHz so `clk_hstx = clk_sys/2 = 126 MHz` yields an exact 25.2 MHz pixel clock.
+**Architecture:** Copy the proven plain-DVI scanout driver and pure OSD rasterizer from `../movieplayer/src/display/` into `bsp/display/`, dropping the compiled-in HDMI-audio path (islands, `pico_hdmi`, `hdmi_audio_ring`, the SRAM arena). The driver turns an SRAM framebuffer into a zero-IRQ DMA scanout; the app writes native-endian RGB565 pixels into a strided video region and HSTX serialises them. The board clock stays project-selectable (default 250 MHz, audio-optimal); the DVI demo opts into 252 MHz via a new `board_init_clk(khz)` so `clk_hstx = clk_sys/2 = 126 MHz` yields an exact 25.2 MHz pixel clock, without disturbing the other apps or the verified audio path.
 
 **Tech Stack:** C11, Raspberry Pi Pico SDK (RP2350B), RP2350 HSTX peripheral, CMake + Ninja, host CTest tree for pure logic.
 
@@ -16,7 +16,7 @@
 - **DMA_IRQ_0 is shared** — the plain-DVI scanout is deliberately **zero-IRQ** (installs no handler), so it does not touch this line. Keep it that way.
 - **Pixel format is native little-endian RGB565.** The app writes `v` (no byte-swap) into the video region.
 - **DVI pins: GPIO 12–19** (CLK 12/13, D0 14/15, D1 16/17, D2 18/19). `_P` = odd gpio (non-inverted), `_N` = even gpio (inverted).
-- **Board clock becomes 252 MHz** (this plan changes it from 250 MHz; invariant 2 is revised in Task 1).
+- **Board clock is project-selectable; default stays 250 MHz.** `board_init()` runs the 250 MHz default (audio-optimal; invariant 2 default unchanged). An app opts into another even-MHz clock via `board_init_clk(khz)` (added in Task 1); the DVI demo uses 252 MHz for an exact 25.2 MHz pixel clock. The DVI driver reads `clk_sys` at runtime, so it works at whatever the app chose (25.2 MHz at 252, 25.0 MHz at the 250 default).
 - **Harvest convention:** copied `.c`/`.h` keep their proven names and `#include "display/…"`-style includes, which resolve against the `bsp/` include root (`target_include_directories(freewili2_bsp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})`).
 - **Commits:** Conventional Commits (`feat:`, `docs:`, …). Git may warn `LF will be replaced by CRLF` — that is expected on this Windows checkout, not an error.
 
@@ -32,10 +32,10 @@
 - `docs/drivers/dvi.md` — per-driver usage doc.
 
 **Modified files:**
-- `bsp/platform/board.h` — `BOARD_SYS_CLOCK_KHZ` 250000 → 252000.
-- `bsp/platform/board.c` — clock comment update.
-- `AGENTS.md` — invariant 2 clock 250 → 252.
-- `docs/hardware/facts.md` — clock fact 250 → 252.
+- `bsp/platform/board.h` — add `board_init_clk(uint32_t)` decl; keep `BOARD_SYS_CLOCK_KHZ` at 250000 (default).
+- `bsp/platform/board.c` — refactor `board_init` into a wrapper over new `board_init_clk(khz)`.
+- `AGENTS.md` — invariant 2 note: 250 MHz default, overridable via `board_init_clk`.
+- `docs/hardware/facts.md` — note the override + the DVI-at-252 audio-pitch interaction (numbers unchanged).
 - `docs/hardware/catalog.md` — DVI row TODO → DONE.
 - `docs/hardware/pinmap.md` — add DVI pins.
 - `bsp/CMakeLists.txt` — add `display/hstx_dvi.c` and `display/dvi_osd.c` to the STATIC lib.
@@ -47,62 +47,107 @@
 
 ---
 
-### Task 1: Bump board clock to 252 MHz (invariant-2 change)
+### Task 1: Make the board system clock project-selectable (default 250 MHz)
 
-The DVI pixel clock is `clk_sys / 2 / 5`. An exact 25.2 MHz (standard 640×480p60) needs `clk_sys = 252 MHz`. 252 MHz is already proven on this board by the movie player at 1.25 V Vcore; the historical "252 fault" was marginal Vcore at 1.15 V, since fixed. This task changes the board-wide clock and the docs that record it.
+The DVI pixel clock is `clk_sys / 2 / 5`, so an exact 25.2 MHz (640×480p60) needs `clk_sys = 252 MHz`. But **250 MHz is audio-optimal** and must stay the default: the NAU88C10 codec MCLK is an integer divide `clk_sys/61`, which lands at `250e6/61 = 4.0984 MHz` (≈ nominal 16 kHz fs) only at 250 MHz; at 252 MHz the audio sample rate shifts ~0.8% (a slight pitch change — no tick artifact, since LRCK stays locked to MCLK/256). `board.c` is compiled **once** into the shared `freewili2_bsp` static lib, so the clock cannot be a per-app compile `-D`. Instead add a **runtime** override: `board_init_clk(khz)` does the full bring-up at a caller-chosen clock, and `board_init()` becomes a thin wrapper at the 250 MHz default. Existing apps and the verified audio path are untouched; the DVI demo (Task 4) opts into 252 MHz. Invariant 2's default is unchanged.
 
 **Files:**
-- Modify: `bsp/platform/board.h:68`
-- Modify: `bsp/platform/board.c:13-16`
-- Modify: `AGENTS.md` (invariant 2)
-- Modify: `docs/hardware/facts.md` (clock fact)
+- Modify: `bsp/platform/board.h:67-72` (add `board_init_clk` decl; keep `BOARD_SYS_CLOCK_KHZ` at 250000)
+- Modify: `bsp/platform/board.c:12-19` (refactor `board_init` → `board_init_clk(khz)`)
+- Modify: `AGENTS.md` (invariant 2 note)
+- Modify: `docs/hardware/facts.md` (note the override + DVI/audio interaction)
 
 **Interfaces:**
-- Produces: `BOARD_SYS_CLOCK_KHZ == 252000` (consumed by `board_init()` and, indirectly, by `hstx_dvi_init` via `clock_get_hz(clk_sys)` in Task 3).
+- Produces:
+  - `void board_init_clk(uint32_t sys_clock_khz);` — full board bring-up (vreg 1.25 V, `set_sys_clock_khz`, clk_peri re-source, `spi_bus_init`, park CC1101 CS, backlight off, I2C1, `ioexp_init`) at the given clock.
+  - `void board_init(void);` — unchanged signature; now `= board_init_clk(BOARD_SYS_CLOCK_KHZ)`.
+  - `BOARD_SYS_CLOCK_KHZ == 250000` (default; still consumed by `hello_display`'s DIAG).
+- Consumed by Task 4 (`hello_dvi` calls `board_init_clk(252000)`).
 
-- [ ] **Step 1: Change the clock constant**
+- [ ] **Step 1: Add the board_init_clk declaration**
 
-In `bsp/platform/board.h`, change line 68 from:
+In `bsp/platform/board.h`, replace the clock define + `board_init` doc comment block (lines 67–72):
 
 ```c
+// --- Clocks: overclock to 250 MHz @ vreg 1.25 V, run from RAM (copy_to_ram). ---
 #define BOARD_SYS_CLOCK_KHZ 250000
+
+// Bring up clocks (250 MHz + vreg 1.25V + clk_peri re-source), park CC1101 CS, backlight off,
+// and initialises I2C1 @ 400 kHz on GPIO 26/27.
+void board_init(void);
 ```
-to:
+with:
 ```c
-#define BOARD_SYS_CLOCK_KHZ 252000
+// --- Clocks: default overclock to 250 MHz @ vreg 1.25 V, run from RAM
+// (copy_to_ram). 250 MHz is the default because it is audio-optimal: the NAU88C10
+// MCLK is an integer divide clk_sys/61 = 4.0984 MHz (~16 kHz fs) at 250. Apps that
+// need a different even-MHz clock pass it to board_init_clk() (e.g. DVI uses 252
+// MHz for an exact 25.2 MHz pixel clock, trading ~0.8% audio pitch). ---
+#define BOARD_SYS_CLOCK_KHZ 250000
+
+// Full board bring-up at the DEFAULT clock (BOARD_SYS_CLOCK_KHZ = 250 MHz): vreg
+// 1.25 V, clk_peri re-source, SPI1 bus, park CC1101 CS, backlight off, I2C1
+// @ 400 kHz, ioexp_init.
+void board_init(void);
+
+// Same bring-up at a caller-chosen system clock (kHz; use an even MHz so downstream
+// /2 dividers like DVI's clk_hstx are exact). board_init() == board_init_clk(BOARD_SYS_CLOCK_KHZ).
+void board_init_clk(uint32_t sys_clock_khz);
 ```
 
-- [ ] **Step 2: Update the board.c clock comment**
+- [ ] **Step 2: Refactor board.c to split out board_init_clk**
 
-In `bsp/platform/board.c`, replace the comment block at lines 13–16:
+In `bsp/platform/board.c`, replace the function signature + the clock comment/set (lines 12–19):
 
 ```c
+void board_init(void) {
     // Raise the core voltage before overclocking. The earlier 252 MHz fault was
     // marginal Vcore at 1.15 V during the heavy st7796 bring-up; the firmware runs
     // from RAM (copy_to_ram) so flash XIP timing doesn't cap clk_sys. 1.25 V gives
     // solid headroom for the overclock below.
+    vreg_set_voltage(VREG_VOLTAGE_1_25);
+    sleep_ms(10);
+    set_sys_clock_khz(BOARD_SYS_CLOCK_KHZ, true);
 ```
 with:
 ```c
-    // Raise the core voltage before overclocking. clk_sys runs at 252 MHz: even,
-    // and clk_hstx = clk_sys/2 = 126 MHz -> 25.2 MHz DVI pixel clock (exact
-    // 640x480p60). The old 252 MHz fault was marginal Vcore at 1.15 V during the
-    // heavy st7796 bring-up; the firmware runs from RAM (copy_to_ram) so flash XIP
-    // timing doesn't cap clk_sys, and 1.25 V gives solid headroom at 252.
+void board_init(void) { board_init_clk(BOARD_SYS_CLOCK_KHZ); }
+
+void board_init_clk(uint32_t sys_clock_khz) {
+    // Raise the core voltage before overclocking. The earlier 252 MHz fault was
+    // marginal Vcore at 1.15 V during the heavy st7796 bring-up; the firmware runs
+    // from RAM (copy_to_ram) so flash XIP timing doesn't cap clk_sys. 1.25 V gives
+    // solid headroom for the overclock (250 MHz default; DVI apps pass 252).
+    vreg_set_voltage(VREG_VOLTAGE_1_25);
+    sleep_ms(10);
+    set_sys_clock_khz(sys_clock_khz, true);
 ```
+
+Everything below that line (the `clk_peri` re-source, `spi_bus_init()`, CC1101 CS park, backlight, `board_i2c1_init()`, `ioexp_init()`) is unchanged — it now lives inside `board_init_clk`. Do not duplicate it into `board_init`; `board_init` is only the one-line wrapper.
 
 - [ ] **Step 3: Update AGENTS.md invariant 2**
 
-In `AGENTS.md`, invariant 2 currently reads `set_sys_clock_khz(250000, true)`. Change the `250000` to `252000` and append a sentence to that invariant:
+In `AGENTS.md`, invariant 2 documents `set_sys_clock_khz(250000, true)`. Keep the `250000` (it remains the default) and append to that invariant:
 
 ```
-   The board runs at 252 MHz (even MHz) so DVI's clk_hstx = clk_sys/2 = 126 MHz
-   gives an exact 25.2 MHz 640x480p60 pixel clock; see docs/drivers/dvi.md.
+   250 MHz is the DEFAULT (audio-optimal: NAU88C10 MCLK = clk_sys/61 = 4.0984 MHz
+   ~ 16 kHz fs). An app may bring the board up at another even-MHz clock via
+   board_init_clk(khz) — the DVI demo uses 252 MHz for an exact 25.2 MHz pixel
+   clock, which shifts audio pitch ~0.8% (only relevant if that app also plays
+   audio). board_init() == board_init_clk(250000). See docs/drivers/dvi.md.
 ```
 
-- [ ] **Step 4: Update docs/hardware/facts.md**
+- [ ] **Step 4: Note the interaction in docs/hardware/facts.md**
 
-Find the fact recording the 250 MHz system clock in `docs/hardware/facts.md` and change `250 MHz` / `250000` to `252 MHz` / `252000`, adding: "252 MHz is even, so DVI's `clk_hstx = clk_sys/2 = 126 MHz` divides to an exact 25.2 MHz pixel clock. Proven on this board by the movie player at 1.25 V." (If `facts.md` has no explicit clock fact, add one under the clock/RAM section.)
+`facts.md` already records the audio MCLK fact (`250e6 / 61 = 4.0984 MHz`). Do NOT change those numbers — 250 MHz stays the default and audio-verified operating point. Add one sentence next to that fact:
+
+```
+250 MHz is the board DEFAULT partly for this reason — it divides near-exactly to
+the codec MCLK. Apps needing a different clock call board_init_clk(khz); the DVI
+demo runs 252 MHz for an exact 25.2 MHz pixel clock, which moves the codec MCLK to
+252e6/61 = 4.131 MHz (~0.8% audio pitch shift) — only relevant if that app also
+plays audio.
+```
 
 - [ ] **Step 5: Verify existing builds and host tests still pass**
 
@@ -110,17 +155,19 @@ Run: `python tools/fw.py test`
 Expected: all existing host tests PASS (no host test depends on the clock).
 
 Run: `python tools/fw.py build hello_display`
-Expected: configures and builds cleanly (the constant is a compile-time value; the build just bakes 252000 in).
+Expected: configures and builds cleanly. `board_init()` is unchanged for it (still 250 MHz via the wrapper), and `BOARD_SYS_CLOCK_KHZ` (250000) still resolves for its DIAG.
 
 - [ ] **Step 6: Commit**
 
 ```bash
 git add bsp/platform/board.h bsp/platform/board.c AGENTS.md docs/hardware/facts.md
-git commit -m "feat(platform): run clk_sys at 252 MHz for exact DVI pixel clock
+git commit -m "feat(platform): add board_init_clk() for project-selectable clock
 
-252 MHz -> clk_hstx = clk_sys/2 = 126 MHz -> 25.2 MHz 640x480p60 pixel
-clock. Proven on this board by the movie player at 1.25 V; the old 252
-fault was 1.15 V Vcore. Revises invariant 2.
+board_init() keeps the 250 MHz default (audio-optimal: NAU88C10 MCLK =
+clk_sys/61 ~ 16 kHz). board_init_clk(khz) brings the board up at a
+caller-chosen even-MHz clock; DVI apps opt into 252 MHz for an exact
+25.2 MHz pixel clock without disturbing audio or the other apps.
+Invariant 2 default unchanged.
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ```
@@ -272,7 +319,7 @@ Copy `hstx_modes.h`, `hstx_dvi.h`, and `hstx_dvi.c` into `bsp/display/`, strippi
 - Modify: `bsp/fw2.h` (add includes)
 
 **Interfaces:**
-- Consumes: `BOARD_SYS_CLOCK_KHZ == 252000` (Task 1); `hstx_modes.h` macros (this task).
+- Consumes: `clk_sys` at runtime (whatever clock the app selected via `board_init`/`board_init_clk` in Task 1 — the driver reads it with `clock_get_hz(clk_sys)`, no compile-time clock constant); `hstx_modes.h` macros (this task).
 - Produces (from `hstx_dvi.h`):
   - `#define HSTX_DVI_W 640`, `HSTX_DVI_H 480`, `HSTX_VID_W_MAX 480`, `HSTX_VID_H_MAX 320`
   - `void hstx_dvi_init(int vid_w, int vid_h);`
@@ -345,7 +392,9 @@ Write `bsp/display/hstx_dvi.h` with exactly this content (no `hdmi_audio_ring.h`
 //   - framebuffer in SRAM (PSRAM scanout underruns the FIFO and wedges flash),
 //   - the <=480x320 video region is stored; the surrounding 640x480 border is
 //     GENERATED by the command list (HSTX_CMD_TMDS_REPEAT), not stored,
-//   - clk_hstx = clk_sys/2 (clk_sys must be 252 MHz -> 126 MHz -> 25.2 MHz pixel).
+//   - clk_hstx = clk_sys/2, read at runtime from clk_sys. An exact 25.2 MHz pixel
+//     (640x480p60) needs clk_sys = 252 MHz (even); at the 250 MHz board default the
+//     pixel is 25.0 MHz (0.7% low). Apps select the clock via board_init_clk().
 #ifndef HSTX_DVI_H_
 #define HSTX_DVI_H_
 #include <stdint.h>
@@ -418,8 +467,9 @@ Write `bsp/display/hstx_dvi.c` with exactly this content (the full HDMI-audio pa
 //   - RGB565 encode == MichaelBell/dvhstx MODE_RGB565: expand_tmds L2 nbits4 rot8
 //     (Red) / L1 nbits5 rot3 (Green) / L0 nbits4 rot29 (Blue); expand_shift
 //     2/16/1/0. Pixels are native little-endian uint16 (NO byte-swap).
-//   - clk_hstx = clk_sys/2; CSR CLKDIV 5 -> pixel = clk_hstx/5. clk_sys = 252 MHz
-//     -> clk_hstx 126 MHz -> 25.2 MHz pixel = standard 640x480p60.
+//   - clk_hstx = clk_sys/2 (read at runtime); CSR CLKDIV 5 -> pixel = clk_hstx/5.
+//     clk_sys = 252 MHz -> clk_hstx 126 MHz -> 25.2 MHz pixel = standard 640x480p60
+//     (DVI apps opt into 252 via board_init_clk; the board default is 250 -> 25.0).
 
 #include "display/hstx_dvi.h"
 #include "display/hstx_modes.h"
@@ -751,7 +801,8 @@ static void paint_test_pattern(void) {
 }
 
 int main(void) {
-    board_init();                       // 252 MHz -> exact 25.2 MHz DVI pixel clock
+    board_init_clk(252000);             // 252 MHz -> exact 25.2 MHz DVI pixel clock
+                                        // (the board default via board_init() is 250)
     hstx_dvi_init(VID_W, VID_H);        // start the scanout (480x288 in 640x480)
     DIAG("hello_dvi: DVI up, clk_hstx=%u kHz\n",
          (unsigned)(clock_get_hz(clk_hstx) / 1000u));
@@ -905,11 +956,15 @@ zero-IRQ baked-command DMA scanout. The HDMI-audio-island mode of the source was
 
 ## Clock
 
-`hstx_dvi_init` sets `clk_hstx = clk_sys / 2`, and the HSTX CSR divides by 5, so
-the pixel clock is `clk_sys / 10`. The board runs `clk_sys = 252 MHz` (see
-invariant 2), giving `clk_hstx = 126 MHz` → an exact **25.2 MHz** 640×480p60 pixel
-clock. `clk_sys` must be at its final even-MHz value before `hstx_dvi_init`
-(`board_init()` handles this).
+`hstx_dvi_init` sets `clk_hstx = clk_sys / 2` (read from `clk_sys` at runtime), and
+the HSTX CSR divides by 5, so the pixel clock is `clk_sys / 10`. The board **default
+is 250 MHz** (audio-optimal; see invariant 2), which gives a 25.0 MHz pixel clock —
+0.7% below the 640×480p60 standard 25.175 MHz, but within most monitors' tolerance.
+For an **exact 25.2 MHz** clock, bring the board up at 252 MHz with
+`board_init_clk(252000)` instead of `board_init()` (`clk_hstx = 126 MHz`). `clk_sys`
+must be at its final even-MHz value before `hstx_dvi_init`. Note: 252 MHz shifts the
+NAU88C10 audio pitch ~0.8% (`clk_sys/61` MCLK), so only opt in where DVI timing
+matters more than audio, or in DVI-only apps like `hello_dvi`.
 
 ## Model
 
@@ -974,7 +1029,8 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 **1. Spec coverage** (design §§ checked against tasks):
 - Scope: plain DVI + OSD, HDMI path dropped → Tasks 2 (OSD), 3 (driver strip). ✓
-- Clock bump to 252 MHz + invariant-2/facts edits → Task 1. ✓
+- Project-selectable clock via `board_init_clk` (default 250 MHz preserved, audio-optimal) + invariant-2/facts notes → Task 1. ✓
+- DVI demo opts into 252 MHz for exact pixel clock → Task 4 (`board_init_clk(252000)`). ✓
 - Stored region 480×320 → Task 3 (`HSTX_VID_H_MAX 320`). ✓
 - Files harvested into `bsp/display/`, font reused → Tasks 2–3, `font5x7` unchanged. ✓
 - Driver public surface (init/set_geometry/accessors/enable) → Task 3 header. ✓
