@@ -53,6 +53,10 @@
 // GPIO47 = XIP_CS1n (function 9), NOT on SPI1. Brought up + memory-mapped in Plan 4.
 #define PIN_PSRAM_CS   47
 
+// --- PIO-USB device port (Pico-PIO-USB, RP2350 device via PIO). Faces the PC. ---
+#define PIN_USB_DP  42   // USB D+
+#define PIN_USB_DM  43   // USB D- (must be D+ + 1 for Pico-PIO-USB)
+
 // --- DMA-IRQ ownership model ---
 // DMA_IRQ_0 is a SHARED handler line. The ST7796 display flush registers a
 // shared handler (via irq_add_shared_handler) that acts only on its own DMA

@@ -35,6 +35,7 @@ static uint8_t s_p0 = P0_OUT;
 
 // Shadow of the Port-2 output byte. Default matches ioexp_init(): IR power OFF.
 #define P2_IR_PWR 0x01  // P2 bit 0, active-high IR power (pin table: sensorview ioexp_pcal6524.h)
+#define P2_USB_DPLUS 0x02  // P2 bit 1, active-high: USB DEVICE D+ 1.5K pull-up
 static uint8_t s_p2 = 0x00;
 
 static void write_outputs(uint8_t p0, uint8_t p1) {
@@ -76,6 +77,12 @@ void ioexp_usb_pwr(bool on) {
     s_p1 = on ? (uint8_t)(s_p1 | P1_HP2_EN) : (uint8_t)(s_p1 & (uint8_t)~P1_HP2_EN);
     write_outputs(s_p0, s_p1);
     DIAG("ioexp: USB HP1(P0_0)+HP2(P1_4) -> %d\n", on ? 1 : 0);
+}
+
+void ioexp_usb_dplus(bool on) {
+    s_p2 = on ? (uint8_t)(s_p2 | P2_USB_DPLUS) : (uint8_t)(s_p2 & (uint8_t)~P2_USB_DPLUS);
+    write_outputs(s_p0, s_p1);   // write_outputs always emits the current s_p2
+    DIAG("ioexp: USB D+ pull-up (P2_1) -> %d\n", on ? 1 : 0);
 }
 
 bool ioexp_init(void) {

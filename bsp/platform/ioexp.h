@@ -39,4 +39,9 @@ void ioexp_ir_pwr(bool on);
 // both active-high (pin table: sensorview ioexp_pcal6524.h). Off at power-on;
 // usb_store_init() turns both on before enumeration.
 void ioexp_usb_pwr(bool on);
+// USB DEVICE D+ 1.5K pull-up enable (PCAL6524 P2 bit 1, active-high). Distinct
+// from ioexp_usb_pwr() (the CH334F HOST hub port power). Off after ioexp_init()
+// (P2_1 is configured as an output driven low = device detached); the PIO-USB
+// device firmware asserts it AFTER its stack is ready to signal USB attach.
+void ioexp_usb_dplus(bool on);
 #endif
