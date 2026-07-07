@@ -7,6 +7,8 @@
 
 #include "platform/board.h"   // (Task 3)
 #include "display/st7796.h" // (Task 4)
+#include "display/hstx_dvi.h"   // (harvested: 640x480p60 DVI over HSTX, GPIO 12-19)
+#include "display/dvi_osd.h"    // (harvested: software OSD for the DVI video region)
 #include "input/ft6336.h"   // (Task 5)
 #include "leds/ws2812_driver.h" // (Task 6)
 #include "audio/tone_gen.h"          // (Task 1)

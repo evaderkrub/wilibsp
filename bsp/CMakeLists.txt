@@ -7,6 +7,7 @@ add_library(freewili2_bsp STATIC
     display/st7796.c
     display/font5x7.c
     display/dvi_osd.c
+    display/hstx_dvi.c
     input/ft6336.c
     input/ft6336_map.c
     leds/led_color.c
