@@ -55,14 +55,14 @@ once each one gets a driver** — do not assume `FwDisplayVibe.md` is exact
 
 | Signal | GPIO | Peripheral | Driver status |
 |---|---|---|---|
-| DVI_CLK_N | 12 | HSTX DVI | TODO |
-| DVI_CLK_P | 13 | HSTX DVI | TODO |
-| DVI_D0_N | 14 | HSTX DVI | TODO |
-| DVI_D0_P | 15 | HSTX DVI | TODO |
-| DVI_D1_N | 16 | HSTX DVI | TODO |
-| DVI_D1_P | 17 | HSTX DVI | TODO |
-| DVI_D2_N | 18 | HSTX DVI | TODO |
-| DVI_D2_P | 19 | HSTX DVI | TODO |
+| DVI_CLK_N | 12 | HSTX DVI | DONE (`bsp/display/hstx_dvi`) |
+| DVI_CLK_P | 13 | HSTX DVI | DONE (`bsp/display/hstx_dvi`) |
+| DVI_D0_N | 14 | HSTX DVI | DONE (`bsp/display/hstx_dvi`) |
+| DVI_D0_P | 15 | HSTX DVI | DONE (`bsp/display/hstx_dvi`) |
+| DVI_D1_N | 16 | HSTX DVI | DONE (`bsp/display/hstx_dvi`) |
+| DVI_D1_P | 17 | HSTX DVI | DONE (`bsp/display/hstx_dvi`) |
+| DVI_D2_N | 18 | HSTX DVI | DONE (`bsp/display/hstx_dvi`) |
+| DVI_D2_P | 19 | HSTX DVI | DONE (`bsp/display/hstx_dvi`) |
 | Haptic motor | 46 | Haptic driver | TODO |
 | Buttons TX | 38 | 14-button serial coprocessor (UART out) | TODO |
 | Buttons RX | 39 | 14-button serial coprocessor (UART in) | TODO |

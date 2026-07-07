@@ -36,7 +36,7 @@ and exactly what `bsp/fw2.h` includes. (`platform/*.c`, `display/*.c`,
 | Peripheral | GPIOs / bus (source: `FwDisplayVibe.md` unless noted) | Harvest from |
 |---|---|---|
 | NFC — ST25R3916B | I2C1 (SDA=26/SCL=27) | `subghz`/`sensorview` (check which owns an NFC driver; not confirmed at catalog time) |
-| DVI / HSTX | DVI_CLK_N/P=12/13, DVI_D0_N/P=14/15, DVI_D1_N/P=16/17, DVI_D2_N/P=18/19 | Owner repo not yet confirmed (HSTX peripheral, likely a fresh Pico SDK HSTX example port) |
+| DVI / HSTX | DVI_CLK_N/P=12/13, DVI_D0_N/P=14/15, DVI_D1_N/P=16/17, DVI_D2_N/P=18/19 | **DONE** — plain 640x480p60 DVI (`bsp/display/hstx_dvi`) harvested from ../movieplayer; HDMI-audio-island mode not harvested. See docs/drivers/dvi.md |
 | 14-button serial coprocessor | TX=GPIO38, RX=GPIO39 (UART) | Owner repo not yet confirmed — buttons: Up, Down, Left, Right, Center, Home, OK, Cancel, Page, Grey, Yellow, Green, Blue, Red |
 | Pico-PIO-USB (USB host via PIO) | D+=GPIO42, D-=GPIO43; 1.5K D+ pullup enabled via the I/O expander | `usbcamfw` / `wili8c` |
 
