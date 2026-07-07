@@ -9,14 +9,16 @@
 #include "hardware/i2c.h"
 #include "hardware/vreg.h"
 
-void board_init(void) {
+void board_init(void) { board_init_clk(BOARD_SYS_CLOCK_KHZ); }
+
+void board_init_clk(uint32_t sys_clock_khz) {
     // Raise the core voltage before overclocking. The earlier 252 MHz fault was
     // marginal Vcore at 1.15 V during the heavy st7796 bring-up; the firmware runs
     // from RAM (copy_to_ram) so flash XIP timing doesn't cap clk_sys. 1.25 V gives
-    // solid headroom for the overclock below.
+    // solid headroom for the overclock (250 MHz default; DVI apps pass 252).
     vreg_set_voltage(VREG_VOLTAGE_1_25);
     sleep_ms(10);
-    set_sys_clock_khz(BOARD_SYS_CLOCK_KHZ, true);
+    set_sys_clock_khz(sys_clock_khz, true);
 
     // After overclocking sys, re-source the peripheral clock from clk_sys so the
     // hardware SPI peripheral has a valid clock. WITHOUT this the SPI clock is dead

@@ -72,6 +72,11 @@ BSP was harvested from. They are also recorded in `docs/hardware/facts.md`.
    code+data+bss live in 512 KB SRAM, so watch the RAM budget — large buffers
    (framebuffers, capture clips) belong in PSRAM (`PSRAM_BASE 0x11000000`,
    APS6404L, 8 MB, brought up by `bsp/platform/psram.c`).
+   250 MHz is the DEFAULT (audio-optimal: NAU88C10 MCLK = clk_sys/61 = 4.0984 MHz
+   ~ 16 kHz fs). An app may bring the board up at another even-MHz clock via
+   board_init_clk(khz) — the DVI demo uses 252 MHz for an exact 25.2 MHz pixel
+   clock, which shifts audio pitch ~0.8% (only relevant if that app also plays
+   audio). board_init() == board_init_clk(250000). See docs/drivers/dvi.md.
 3. **Diagnostics = SEGGER RTT only.** `DIAG(...)` (`bsp/platform/diag.h`) →
    `SEGGER_RTT_printf(0, ...)` on channel 0. There is no UART/USB stdio.
    `SEGGER_RTT_printf` supports `%d %u %x %s %c` and field widths — **no

@@ -165,6 +165,12 @@ set to the nominal 16000 Hz, the DAC consumes ~9 samples/s faster than data arri
 speaker masks it; a clean headphone/line-out exposes it). Verified on 2026-07-04 as
 ±9.2 Hz sidebands on the 1 kHz carrier (−17 dB), gone (−44 dB) after the fix.
 
+250 MHz is the board DEFAULT partly for this reason — it divides near-exactly to
+the codec MCLK. Apps needing a different clock call board_init_clk(khz); the DVI
+demo runs 252 MHz for an exact 25.2 MHz pixel clock, which moves the codec MCLK to
+252e6/61 = 4.131 MHz (~0.8% audio pitch shift) — only relevant if that app also
+plays audio.
+
 **Rule:** derive the I2S PIO clkdiv from the **same integer MCLK divider**, not from
 the nominal sample rate, so `LRCK == MCLK/256` exactly and data-in == data-out. In
 `bsp/audio/audio_i2s_duplex.c`: `float div = (float)(8u * ticks) / 3.0f;` (where

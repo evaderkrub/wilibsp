@@ -64,12 +64,21 @@
 #define LCD_SPI_BAUD     (100u * 1000u * 1000u)   // 100 MHz (divider-limited by clk_peri)
 #define CC1101_SPI_BAUD  (5u * 1000u * 1000u)     // 5 MHz (CC1101 SPI ceiling ~6.5 MHz)
 
-// --- Clocks: overclock to 250 MHz @ vreg 1.25 V, run from RAM (copy_to_ram). ---
+// --- Clocks: default overclock to 250 MHz @ vreg 1.25 V, run from RAM
+// (copy_to_ram). 250 MHz is the default because it is audio-optimal: the NAU88C10
+// MCLK is an integer divide clk_sys/61 = 4.0984 MHz (~16 kHz fs) at 250. Apps that
+// need a different even-MHz clock pass it to board_init_clk() (e.g. DVI uses 252
+// MHz for an exact 25.2 MHz pixel clock, trading ~0.8% audio pitch). ---
 #define BOARD_SYS_CLOCK_KHZ 250000
 
-// Bring up clocks (250 MHz + vreg 1.25V + clk_peri re-source), park CC1101 CS, backlight off,
-// and initialises I2C1 @ 400 kHz on GPIO 26/27.
+// Full board bring-up at the DEFAULT clock (BOARD_SYS_CLOCK_KHZ = 250 MHz): vreg
+// 1.25 V, clk_peri re-source, SPI1 bus, park CC1101 CS, backlight off, I2C1
+// @ 400 kHz, ioexp_init.
 void board_init(void);
+
+// Same bring-up at a caller-chosen system clock (kHz; use an even MHz so downstream
+// /2 dividers like DVI's clk_hstx are exact). board_init() == board_init_clk(BOARD_SYS_CLOCK_KHZ).
+void board_init_clk(uint32_t sys_clock_khz);
 
 // Backlight: 0 = off, nonzero = on (plain GPIO).
 void board_backlight_set(uint8_t level);
