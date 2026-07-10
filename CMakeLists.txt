@@ -12,6 +12,9 @@ pico_sdk_init()
 
 add_subdirectory(bsp)
 
+# Reusable non-BSP libraries.
+add_subdirectory(libs/onewili)
+
 # Each app opts in; add new apps here.
 add_subdirectory(apps/hello_audio)
 add_subdirectory(apps/hello_cc1101)
