@@ -10,7 +10,10 @@
 int main(void) {
     board_init();   /* must precede ow_open_fwgui: uart_init reads clk_peri */
 
-    ow_device dev;
+    static ow_device dev;   /* ~37 KB of buffers - far too big for the 2 KB stack */
+    /* ow_open_fwgui currently cannot fail (it only sends the reset byte,
+     * no handshake) - this loop future-proofs a smarter open. A missing
+     * bridge surfaces later as toggle timeouts on the DIAG below. */
     while (ow_open_fwgui(&dev) != OW_OK) {
         DIAG("toggleled: FwGUI link open failed (is the main CPU running stock fw?), retry in 1 s\n");
         sleep_ms(1000);
