@@ -8,7 +8,7 @@ built on. Read it before making changes.
 ## What this is
 
 `wilibsp` is a board-support **monorepo** for the **FreeWili 2** (Raspberry Pi
-**RP2350B**, 48 GPIO, 16 MB flash, 8 MB PSRAM). It provides:
+**RP2350B**, 48 GPIO, 16 MB flash, 8 MB PSRAM). Importantly, today it covers the display processor only. (This means you must use OpenOCD interface 0 — FreeWili 2 exposes multiple debug interfaces.) It provides:
 
 - `bsp/` — the shared `freewili2_bsp` CMake **STATIC library**: platform
   bring-up, display, touch, and LED drivers, harvested and normalized from the
@@ -36,13 +36,13 @@ All commands run from the repo root and are identical on Windows and Linux
 (the CLI is Python; `tools/fw` is the POSIX launcher, `tools/fw.cmd` the
 Windows one — both just call `python tools/fw.py "$@"`).
 
-| Command | What it does |
-|---|---|
-| `fw build [app]` | Configure + build `apps/<app>` for the RP2350B target via `cmake --build --preset target --target <app>` (default app: `hello_display`) |
-| `fw flash [app]` | Program `build/apps/<app>/<app>.elf` over the cmsis-dap debug probe via OpenOCD (`tools/openocd/freewili2.cfg`) |
-| `fw rtt` | Attach to the target and stream SEGGER RTT diagnostics (OpenOCD RTT server on port 9090) |
-| `fw test` | Configure + build + run the standalone host CTest tree in `tests/` (MinGW GCC + Ninja on Windows; no Pico SDK, no hardware) |
-| `fw new-app <name>` | Scaffold `apps/<name>` by copying `apps/template` and rewriting the CMake target name |
+| Command             | What it does                                                                                                                            |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `fw build [app]`    | Configure + build `apps/<app>` for the RP2350B target via `cmake --build --preset target --target <app>` (default app: `hello_display`) |
+| `fw flash [app]`    | Program `build/apps/<app>/<app>.elf` over the cmsis-dap debug probe via OpenOCD (`tools/openocd/freewili2.cfg`)                         |
+| `fw rtt`            | Attach to the target and stream SEGGER RTT diagnostics (OpenOCD RTT server on port 9090)                                                |
+| `fw test`           | Configure + build + run the standalone host CTest tree in `tests/` (MinGW GCC + Ninja on Windows; no Pico SDK, no hardware)             |
+| `fw new-app <name>` | Scaffold `apps/<name>` by copying `apps/template` and rewriting the CMake target name                                                   |
 
 Add `--print` to `build`/`flash`/`rtt`/`test` to print the underlying
 command(s) instead of running them (useful for an agent to inspect what would
@@ -105,6 +105,7 @@ BSP was harvested from. They are also recorded in `docs/hardware/facts.md`.
    the top-level `CMakeLists.txt`; `list(APPEND PICO_BOARD_HEADER_DIRS ...)`
    points at `bsp/boards`. Never override on the command line (repeats
    invariant 1 — it's the single most common way to break a fresh build).
+9. **No need to calibrate touch screen**. The touch screen is pre calibrated at the factory.
 
 ## How to add a driver
 
