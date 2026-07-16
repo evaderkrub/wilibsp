@@ -39,6 +39,29 @@ audio_i2s_duplex_play_stop();                 // park DAC at silence
 codec_nau88c10_set_output(CODEC_OUT_SPEAKER); // or CODEC_OUT_HEADPHONE (3.5mm)
 ```
 
+For buffers too large (or not power-of-two / aligned) for the read-ring —
+e.g. sampled audio clips — use the **streamed** loop instead:
+
+```c
+audio_i2s_duplex_play_stream_loop(clip, frames); // frames: multiple of 8192
+```
+
+Two chained DMA channels refill in 8192-frame chunks from a shared
+`DMA_IRQ_0` handler and wrap seamlessly; `frames` **must be a multiple of
+8192** (a refill always transfers a whole chunk). No alignment requirement.
+`audio_i2s_duplex_play_stop()` stops either loop.
+
+When playback is done and the speaker should not idle-hiss, power the output
+stage down:
+
+```c
+codec_nau88c10_speaker_low_power(); // soft-mute DAC, mute spk, HP off, 5V boost off
+```
+
+To bring the output back: `codec_nau88c10_dac_mute(false)` (clears the DAC
+soft-mute) then `codec_nau88c10_set_output(...)` (re-enables the output
+drivers, volume, and boost).
+
 ## Capture ("audio in")
 
 ```c

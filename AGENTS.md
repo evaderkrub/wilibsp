@@ -16,6 +16,11 @@ built on. Read it before making changes.
 - `apps/` — individual CMake executables that link `freewili2_bsp`
   (`template` — starter scaffold; `hello_display` — v1 on-hardware smoke
   test: display renders, touch responds, LEDs light).
+- `libs/` — optional static libraries apps can link in addition to the BSP.
+  Today: `libs/onewili` — the generated OneWili C command API for driving the
+  **main CPU** (GPIO, LEDs, radio, …) over the FwGUI display link (UART0,
+  8 Mbaud). See `libs/onewili/README.md`; `apps/toggleled` is the worked
+  example.
 - `tools/fw.py` (+ `tools/fw` / `tools/fw.cmd` launchers) — a cross-platform
   CLI that drives CMake + OpenOCD identically on Windows and Linux.
 - `tests/` — a standalone host CTest tree for pure logic (no Pico SDK, no
@@ -141,7 +146,9 @@ through exactly this procedure.
   against `bsp/platform/board.h`, the **authoritative** pin source).
 - **Hardware facts / invariants**: `docs/hardware/facts.md`.
 - **Peripheral status (done vs. TODO)**: `docs/hardware/catalog.md`.
-- **Per-driver usage docs**: `docs/drivers/{platform,display,touch,leds}.md`.
+- **Per-driver usage docs**: `docs/drivers/*.md` (platform, display, touch,
+  leds, audio, pdm, radio, sensors, ir, usbhost, dvi).
+- **Main-CPU control (OneWili over the FwGUI link)**: `libs/onewili/README.md`.
 - **Original hardware description**: `FwDisplayVibe.md` (repo root) — a
   secondary source, useful for the broader peripheral inventory (radio, NFC,
   IR, DVI, audio, mics, buttons, PIO-USB, sensors) not yet in `board.h`, but
