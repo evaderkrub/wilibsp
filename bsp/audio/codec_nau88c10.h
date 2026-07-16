@@ -27,6 +27,9 @@ typedef enum { CODEC_OUT_SPEAKER = 0, CODEC_OUT_HEADPHONE = 1 } codec_out_t;
 // codec state (the UI reflects it); on-device validation is pending.
 void codec_nau88c10_set_output(codec_out_t out);
 
+// Mute and power down the speaker output stage and 5V boost.
+void codec_nau88c10_speaker_low_power(void);
+
 // Log the output-routing registers (R3/0x03, R54/0x36 spk vol, R56/0x38 HP enable,
 // R69/0x45 spk boost) over RTT — used to confirm a set_output() switch took effect.
 void codec_nau88c10_log_output(void);

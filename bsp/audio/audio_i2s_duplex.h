@@ -17,6 +17,7 @@ uint audio_i2s_duplex_rx_dreq(void);
 // to the TX FIFO forever. `buf` MUST be aligned to its byte size and the byte size
 // MUST be a power of two (ring requirement). For 64 frames -> 256 bytes, aligned(256).
 void audio_i2s_duplex_play_loop(const uint32_t *buf, uint frames);
+void audio_i2s_duplex_play_stream_loop(const uint32_t *buf, uint frames);
 
 // Stop playback: abort the TX DMA and clear the TX FIFO (DAC mid-scale silence).
 void audio_i2s_duplex_play_stop(void);

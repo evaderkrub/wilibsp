@@ -9,12 +9,32 @@
 #include "hardware/clocks.h"
 #include "hardware/gpio.h"
 #include "hardware/dma.h"
+#include "hardware/irq.h"
 #include "i2s_duplex.pio.h"
 
 #define DPX_PIO pio0
 #define DPX_SM  0
 
+#define STREAM_CHUNK 8192u
+
 static int s_tx_dma[2] = { -1, -1 };
+static const uint32_t *s_stream_buf;
+static uint32_t s_stream_frames, s_stream_next;
+static bool s_stream_irq_added;
+
+static void audio_tx_dma_irq(void) {
+    uint32_t pending = dma_hw->ints0;
+    for (int i = 0; i < 2; i++) {
+        if (s_tx_dma[i] >= 0 && (pending & (1u << s_tx_dma[i]))) {
+            dma_hw->ints0 = 1u << s_tx_dma[i];
+            if (s_stream_buf) {
+                dma_channel_set_read_addr(s_tx_dma[i], s_stream_buf + s_stream_next, false);
+                dma_channel_set_trans_count(s_tx_dma[i], STREAM_CHUNK, false);
+                s_stream_next = (s_stream_next + STREAM_CHUNK) % s_stream_frames;
+            }
+        }
+    }
+}
 
 void audio_i2s_duplex_init(uint32_t sample_rate) {
     // MCLK = 256*fs, 50% duty (codec MCLK-direct).
@@ -86,7 +106,27 @@ void audio_i2s_duplex_play_loop(const uint32_t *buf, uint frames) {
     dma_channel_start(s_tx_dma[0]);
 }
 
+void audio_i2s_duplex_play_stream_loop(const uint32_t *buf, uint frames) {
+    if (s_tx_dma[0] < 0) { s_tx_dma[0] = dma_claim_unused_channel(true); s_tx_dma[1] = dma_claim_unused_channel(true); }
+    s_stream_buf = buf; s_stream_frames = frames; s_stream_next = 2u * STREAM_CHUNK;
+    uint tx_dreq = pio_get_dreq(DPX_PIO, DPX_SM, true);
+    if (!s_stream_irq_added) {
+        irq_add_shared_handler(DMA_IRQ_0, audio_tx_dma_irq, PICO_SHARED_IRQ_HANDLER_DEFAULT_ORDER_PRIORITY);
+        s_stream_irq_added = true;
+    }
+    for (int i = 0; i < 2; i++) {
+        dma_channel_config c = dma_channel_get_default_config(s_tx_dma[i]);
+        channel_config_set_transfer_data_size(&c, DMA_SIZE_32);
+        channel_config_set_read_increment(&c, true); channel_config_set_write_increment(&c, false);
+        channel_config_set_dreq(&c, tx_dreq); channel_config_set_chain_to(&c, s_tx_dma[i ^ 1]);
+        dma_channel_configure(s_tx_dma[i], &c, &DPX_PIO->txf[DPX_SM], buf + i * STREAM_CHUNK, STREAM_CHUNK, false);
+        dma_channel_set_irq0_enabled(s_tx_dma[i], true);
+    }
+    irq_set_enabled(DMA_IRQ_0, true); dma_channel_start(s_tx_dma[0]);
+}
+
 void audio_i2s_duplex_play_stop(void) {
+    s_stream_buf = NULL;
     for (int i = 0; i < 2; i++)
         if (s_tx_dma[i] >= 0) dma_channel_abort(s_tx_dma[i]);
     // Clear the TX FIFO so the DAC sits at mid-scale (silence) during the baseline.

@@ -128,6 +128,14 @@ void codec_nau88c10_set_output(codec_out_t out) {
     }
 }
 
+void codec_nau88c10_speaker_low_power(void) {
+    codec_write(0x0a, 0x0040);          // soft-mute DAC
+    codec_write(0x36, NAU_36_SPK_MUTE); // mute speaker output
+    codec_write(0x38, NAU_38_HP_OFF);   // headphone amp off
+    codec_write(0x45, 0x0000);          // disable 5V speaker boost
+    codec_write(0x03, 0x0029);          // output drivers off; keep core bias path
+    DIAG("codec: speaker low power\n");
+}
 void codec_nau88c10_dump(void) {
     // Vendor readID(): register N is read by addressing byte N<<1 (9-bit regs).
     for (uint8_t reg = 0; reg <= 0x45; reg++) {
