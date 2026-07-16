@@ -7,5 +7,5 @@ __pycache__/
 .venv/
 .superpowers/
 .claude/
-# Raw audio sources (large); only the generated audio_data.c is committed.
-apps/orca_browser/audio_src/
+# Local-only port of the standalone orca_browser repo; lives in its own repo.
+apps/orca_browser/
