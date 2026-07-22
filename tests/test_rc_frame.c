@@ -55,5 +55,11 @@ int main(void) {
     // Zero-length payload rejected at build time.
     ASSERT_EQ(frame_build(0x01, FRAME_TYPE_MSG, big, 0, buf), 0);
 
+    // Wire-level len==0 must be rejected by the parser (build-side guard is
+    // tested above; this pins the parser's own range check).
+    uint8_t z[5] = { FRAME_SYNC, 0x01, FRAME_TYPE_MSG, 0x00, 0x00 };
+    frame_parser_init(&p);
+    ASSERT_EQ(feed(&p, z, 5, &m), -1);
+
     TEST_RETURN();
 }

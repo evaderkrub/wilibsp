@@ -16,6 +16,8 @@ void audio_tx_text(uint8_t sender, const char *text);
 bool audio_tx_busy(void);
 int  audio_rx_pop(frame_msg_t *m);
 unsigned audio_rx_crc_errors(void);
+unsigned audio_rx_heartbeat(void);
+unsigned audio_rx_qdrops(void);
 int  audio_rx_peak(void);
 void audio_set_selftest(bool on);
 bool audio_selftest(void);

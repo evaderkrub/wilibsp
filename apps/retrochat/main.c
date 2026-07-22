@@ -75,6 +75,7 @@ int main(void) {
             ui_set_stats(err, audio_rx_peak());
             if (err != last_err) DIAG("rc: crc errors=%u\n", err);
             last_err = err;
+            DIAG("rc: hb=%u qdrop=%u\n", audio_rx_heartbeat(), audio_rx_qdrops());
             next_stats = make_timeout_time_ms(500);
         }
         sleep_ms(10);

@@ -11,6 +11,7 @@
 #include "modem/msgq.h"
 
 #define RX_MIC           MIC_A          // physical order D,B,A,C: A is center-right
+#define RC_TX_OUTPUT     CODEC_OUT_SPEAKER  // compile-time output routing knob
 #define RX_CHUNK         512u           // 32 ms per pull @ 16 kHz
 #define TX_TRAIL_SILENCE 4096u          // 256 ms stop slack before the stream wraps
 // PSRAM layout: packed 32-bit I2S TX frames at base, int16 render scratch at +1 MB.
@@ -20,6 +21,8 @@
 static volatile bool s_txing;           // core 0 sets, core 1 reads (half duplex)
 static volatile bool s_selftest;
 static volatile unsigned s_crc_err;
+static volatile unsigned s_hb;          // core-1 loop heartbeat
+static volatile unsigned s_qdrop;       // rx queue full, dropped (core-1 must not DIAG)
 static volatile int s_peak;
 static msgq_t s_q;
 static absolute_time_t s_tx_end;
@@ -35,6 +38,7 @@ static void core1_main(void) {
     afsk_demod_init(&dem);
     frame_parser_init(&fp);
     for (;;) {
+        s_hb++;
         int16_t *dst[PDM_NUM_MICS] = { pcm[0], pcm[1], pcm[2], pcm[3] };
         unsigned n = pdm_capture_pull(dst, RX_CHUNK);
         if (!n) { tight_loop_contents(); continue; }
@@ -49,7 +53,7 @@ static void core1_main(void) {
         for (unsigned i = 0; i < nb; i++) {
             int r = frame_parser_push(&fp, bytes[i], &msg);
             if (r == 1) {
-                if (!msgq_push(&s_q, &msg)) DIAG("rc: rx queue full, dropped\n");
+                if (!msgq_push(&s_q, &msg)) s_qdrop++;
             } else if (r == -1) {
                 s_crc_err++;
             }
@@ -90,7 +94,7 @@ void audio_tx_text(uint8_t sender, const char *text) {
     memset(&TX_BUF[ns], 0, (padded - ns) * sizeof(uint32_t));
     if (!s_selftest) s_txing = true;
     codec_nau88c10_dac_mute(false);
-    codec_nau88c10_set_output(CODEC_OUT_SPEAKER);
+    codec_nau88c10_set_output(RC_TX_OUTPUT);
     audio_i2s_duplex_play_stream_loop(TX_BUF, padded);
     s_tx_end  = make_timeout_time_us((uint64_t)ns * 1000000ull / AFSK_FS + 30000ull);
     s_playing = true;
@@ -110,6 +114,8 @@ bool audio_tx_busy(void) {
 
 int audio_rx_pop(frame_msg_t *m) { return msgq_pop(&s_q, m); }
 unsigned audio_rx_crc_errors(void) { return s_crc_err; }
+unsigned audio_rx_heartbeat(void) { return s_hb; }
+unsigned audio_rx_qdrops(void) { return s_qdrop; }
 int audio_rx_peak(void) { return s_peak; }
 void audio_set_selftest(bool on) { s_selftest = on; }
 bool audio_selftest(void) { return s_selftest; }

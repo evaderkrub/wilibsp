@@ -1,6 +1,8 @@
 #include "msgq.h"
 #include <string.h>
 
+_Static_assert(ATOMIC_INT_LOCK_FREE == 2, "msgq requires lock-free atomic_uint");
+
 void msgq_init(msgq_t *q) {
     memset(q->slot, 0, sizeof q->slot);
     atomic_init(&q->head, 0);

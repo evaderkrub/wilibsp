@@ -26,7 +26,8 @@ unsigned afsk_demod_process(afsk_demod_t *d, const int16_t *pcm, unsigned n,
         int16_t s = sat16(y);
 
         // Peak tracker for the UI signal meter (decay ~ 1/1024 per sample).
-        int16_t a = (int16_t)(s < 0 ? -s : s);
+        int aa = (s < 0) ? -(int)s : (int)s;
+        int16_t a = (aa > 32767) ? 32767 : (int16_t)aa;
         if (a > d->peak) d->peak = a;
         else if (d->peak > 0) d->peak -= (int16_t)((d->peak >> 10) + 1);
 
