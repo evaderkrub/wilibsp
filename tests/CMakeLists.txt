@@ -191,3 +191,7 @@ set(RCMODEM ${CMAKE_CURRENT_SOURCE_DIR}/../apps/retrochat/modem)
 add_executable(test_rc_crc16 test_rc_crc16.c ${RCMODEM}/crc16.c)
 target_include_directories(test_rc_crc16 PRIVATE ${RCMODEM} ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME rc_crc16 COMMAND test_rc_crc16)
+
+add_executable(test_rc_frame test_rc_frame.c ${RCMODEM}/frame.c ${RCMODEM}/crc16.c)
+target_include_directories(test_rc_frame PRIVATE ${RCMODEM} ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME rc_frame COMMAND test_rc_frame)
