@@ -185,3 +185,9 @@ target_include_directories(test_dvi_osd PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../bsp
     ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME dvi_osd COMMAND test_dvi_osd)
+
+# --- apps/retrochat acoustic-modem pure logic (see docs/superpowers in outer repo) ---
+set(RCMODEM ${CMAKE_CURRENT_SOURCE_DIR}/../apps/retrochat/modem)
+add_executable(test_rc_crc16 test_rc_crc16.c ${RCMODEM}/crc16.c)
+target_include_directories(test_rc_crc16 PRIVATE ${RCMODEM} ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME rc_crc16 COMMAND test_rc_crc16)
