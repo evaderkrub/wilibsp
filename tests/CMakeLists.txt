@@ -185,3 +185,13 @@ target_include_directories(test_dvi_osd PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../bsp
     ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME dvi_osd COMMAND test_dvi_osd)
+
+# --- bsp/keyboard fw2kb chord engine (harvested from ../wilikeyboard) ---
+set(BSPKBD ${CMAKE_CURRENT_SOURCE_DIR}/../bsp/keyboard)
+add_executable(test_fw2kb test_fw2kb.c ${BSPKBD}/fw2kb.c)
+target_include_directories(test_fw2kb PRIVATE ${BSPKBD} ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME fw2kb COMMAND test_fw2kb)
+
+add_executable(test_fw2kb_hid test_fw2kb_hid.c ${BSPKBD}/fw2kb.c ${BSPKBD}/fw2kb_hidmap.c)
+target_include_directories(test_fw2kb_hid PRIVATE ${BSPKBD} ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME fw2kb_hid COMMAND test_fw2kb_hid)

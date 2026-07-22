@@ -44,6 +44,8 @@ add_library(freewili2_bsp STATIC
     ir/ir_capture.c
     ir/ir_tx.c
     gfx/palette.c
+    keyboard/fw2kb.c
+    keyboard/fw2kb_hidmap.c
     usbhost/usb_core.c
     usbhost/usb_hcd.c
     usbhost/usb_hub.c

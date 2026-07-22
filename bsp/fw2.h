@@ -42,5 +42,6 @@
 #include "ir/ir_resolve.h"   // (harvested: .ir entry -> timings resolver, pure)
 
 #include "usbhost/usb_store.h"  // (harvested: USB thumb-drive mount manager, WiliIR/usbmsc)
+#include "keyboard/fw2kb.h"     // (harvested: two-press chord keyboard engine, ../wilikeyboard)
 
 #endif // FW2_H
