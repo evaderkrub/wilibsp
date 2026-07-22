@@ -39,14 +39,20 @@ unsigned afsk_demod_process(afsk_demod_t *d, const int16_t *pcm, unsigned n,
         d->lpf += (prod - d->lpf) >> 3;
         int dec = (d->lpf < 0) ? 1 : 0;   // negative product = mark = 1
 
-        // Bit PLL: nudge phase 1/4 of the way to a boundary on each decision
-        // transition; sample the decision once per bit at mid-phase.
+        // Bit PLL (second-order, frequency-tracking): nudge phase 1/4 of the way to
+        // a boundary on each decision transition (proportional term), and adjust the
+        // free-running rate (pll_freq, integral term) so a constant TX/RX clock
+        // offset settles to zero steady-state phase error instead of a fixed lag;
+        // sample the decision once per bit at mid-phase.
         uint32_t prev = d->pll;
-        d->pll += PLL_INC;
+        d->pll += (uint32_t)((int32_t)PLL_INC + d->pll_freq);
         if (dec != d->last_dec) {
             int32_t ph = (int32_t)(d->pll & 0xFFFFu);
             if (ph > 0x8000) ph -= 0x10000;
             d->pll -= (uint32_t)(ph >> 2);
+            d->pll_freq -= ph >> 8;
+            if (d->pll_freq > (int32_t)(PLL_INC / 50))  d->pll_freq = (int32_t)(PLL_INC / 50);
+            if (d->pll_freq < -(int32_t)(PLL_INC / 50)) d->pll_freq = -(int32_t)(PLL_INC / 50);
             d->last_dec = dec;
         }
         if ((prev & 0xFFFFu) < 0x8000u && (d->pll & 0xFFFFu) >= 0x8000u) {

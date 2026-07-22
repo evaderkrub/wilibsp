@@ -1,8 +1,10 @@
 // modem/afsk_demod.h — Bell 202 software demodulator, pure integer.
 // Chain: DC block -> delayed-product discriminator (delay 7 @ 16 kHz) -> LPF ->
-// sign decision -> Q16 bit PLL -> UART deframer. Amplitude-independent: the
-// decision is the SIGN of the averaged product, and the PLL locks on decision
-// transitions, so no AGC stage is needed.
+// sign decision -> second-order (frequency-tracking) Q16 bit PLL -> UART deframer.
+// Amplitude-independent: the decision is the SIGN of the averaged product, and the
+// PLL locks on decision transitions, so no AGC stage is needed. The PLL's integral
+// term (pll_freq) nulls the steady-state phase error a constant TX/RX clock offset
+// would otherwise cause in a first-order (proportional-only) loop.
 #ifndef RC_AFSK_DEMOD_H
 #define RC_AFSK_DEMOD_H
 #include <stdint.h>
@@ -16,6 +18,7 @@ typedef struct afsk_demod {
     int16_t hp_x1;
     int32_t lpf;                   // discriminator LPF state
     uint32_t pll;                  // Q16 bit phase (bit boundary at 0)
+    int32_t pll_freq;              // Q16 per-sample frequency correction (integral term)
     int last_dec;
     int bit_idx;                   // -1 = hunting start bit, else 0..8
     unsigned shift;
