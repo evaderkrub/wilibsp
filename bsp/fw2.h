@@ -43,5 +43,6 @@
 
 #include "usbhost/usb_store.h"  // (harvested: USB thumb-drive mount manager, WiliIR/usbmsc)
 #include "keyboard/fw2kb.h"     // (harvested: two-press chord keyboard engine, ../wilikeyboard)
+#include "input/uartkbd.h"      // (FW2 UART keyboard: 14 buttons @ UART1 62500, GPIO38/39)
 
 #endif // FW2_H

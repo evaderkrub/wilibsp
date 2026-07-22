@@ -47,6 +47,7 @@ add_library(freewili2_bsp STATIC
     keyboard/fw2kb.c
     keyboard/fw2kb_hidmap.c
     input/uartkbd_parse.c
+    input/uartkbd.c
     usbhost/usb_core.c
     usbhost/usb_hcd.c
     usbhost/usb_hub.c
