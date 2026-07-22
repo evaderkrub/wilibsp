@@ -91,9 +91,9 @@ void ui_set_status(bool txing, bool selftest) {
 
 void ui_set_stats(unsigned crc_err, int peak) {
     char buf[24];
-    // 8-step signal bar from the demod peak tracker.
+    // 8-step signal bar: tiers 128..16384 (all reachable from int16_t range).
     int bars = 0;
-    for (int t = 256; t <= peak && bars < 8; t <<= 1) bars++;
+    for (int t = 128; t <= peak && bars < 8; t <<= 1) bars++;
     snprintf(buf, sizeof buf, "E%-4u S%d ID%02X", crc_err % 10000u, bars, s_self);
     st7796_fill_rect(200, 0, ST7796_W - 200, STATUS_H, COL_STATUS);
     st7796_draw_text(204, 4, SCALE, COL_BTN_TXT, COL_STATUS, buf);
@@ -102,11 +102,12 @@ void ui_set_stats(unsigned crc_err, int peak) {
 static void grid_draw(void) {
     for (int i = 0; i < 9; i++) {
         int cx = (i % GRID_COLS) * BTN_W, cy = GRID_Y + (i / GRID_COLS) * BTN_H;
-        st7796_fill_rect(cx + 1, cy + 1, BTN_W - 2, BTN_H - 2, COL_BTN);
+        int ch = (i / GRID_COLS == GRID_ROWS - 1) ? (ST7796_H - cy) : BTN_H;
+        st7796_fill_rect(cx + 1, cy + 1, BTN_W - 2, ch - 2, COL_BTN);
         const char *lbl = (i < PROTO_NUM_CANNED) ? proto_canned[i] : "RESEND";
         int len = (int)strlen(lbl);
         st7796_draw_text(cx + (BTN_W - len * CELL_W) / 2,
-                         cy + (BTN_H - CELL_H) / 2, SCALE, COL_BTN_TXT, COL_BTN, lbl);
+                         cy + (ch - CELL_H) / 2, SCALE, COL_BTN_TXT, COL_BTN, lbl);
     }
 }
 
@@ -142,7 +143,9 @@ ui_action_t ui_poll(void) {
         was_down = false;
         if (swallow) return UI_NONE;
         if (down_y >= GRID_Y) {
-            int cell = (down_y - GRID_Y) / BTN_H * GRID_COLS + down_x / BTN_W;
+            int row = (down_y - GRID_Y) / BTN_H;
+            if (row >= GRID_ROWS) row = GRID_ROWS - 1;
+            int cell = row * GRID_COLS + down_x / BTN_W;
             if (cell >= 0 && cell < PROTO_NUM_CANNED) return (ui_action_t)cell;
             if (cell == 8) return UI_RESEND;
         }
