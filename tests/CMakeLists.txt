@@ -204,3 +204,9 @@ add_executable(test_rc_afsk_mod test_rc_afsk_mod.c ${RCMODEM}/afsk_mod.c)
 target_include_directories(test_rc_afsk_mod PRIVATE ${RCMODEM} ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(test_rc_afsk_mod m)
 add_test(NAME rc_afsk_mod COMMAND test_rc_afsk_mod)
+
+add_executable(test_rc_afsk_demod test_rc_afsk_demod.c
+    ${RCMODEM}/afsk_demod.c ${RCMODEM}/afsk_mod.c ${RCMODEM}/frame.c ${RCMODEM}/crc16.c)
+target_include_directories(test_rc_afsk_demod PRIVATE ${RCMODEM} ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(test_rc_afsk_demod m)
+add_test(NAME rc_afsk_demod COMMAND test_rc_afsk_demod)
