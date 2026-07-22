@@ -195,3 +195,12 @@ add_test(NAME fw2kb COMMAND test_fw2kb)
 add_executable(test_fw2kb_hid test_fw2kb_hid.c ${BSPKBD}/fw2kb.c ${BSPKBD}/fw2kb_hidmap.c)
 target_include_directories(test_fw2kb_hid PRIVATE ${BSPKBD} ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME fw2kb_hid COMMAND test_fw2kb_hid)
+
+# --- bsp/input uartkbd_parse pure-logic parser (no UART hardware) ---
+add_executable(test_uartkbd_parse
+    test_uartkbd_parse.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp/input/uartkbd_parse.c)
+target_include_directories(test_uartkbd_parse PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp/input
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME uartkbd_parse COMMAND test_uartkbd_parse)
