@@ -199,3 +199,8 @@ add_test(NAME rc_frame COMMAND test_rc_frame)
 add_executable(test_rc_msgq test_rc_msgq.c ${RCMODEM}/msgq.c)
 target_include_directories(test_rc_msgq PRIVATE ${RCMODEM} ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME rc_msgq COMMAND test_rc_msgq)
+
+add_executable(test_rc_afsk_mod test_rc_afsk_mod.c ${RCMODEM}/afsk_mod.c)
+target_include_directories(test_rc_afsk_mod PRIVATE ${RCMODEM} ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(test_rc_afsk_mod m)
+add_test(NAME rc_afsk_mod COMMAND test_rc_afsk_mod)
