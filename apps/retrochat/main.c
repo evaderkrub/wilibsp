@@ -50,7 +50,10 @@ int main(void) {
             char text[FRAME_MAX_PAYLOAD + 1];
             memcpy(text, m.payload, m.len);
             text[m.len] = '\0';
-            ui_add_message(m.sender, text, m.sender == proto_self_id());
+            // In self-test the acoustic echo must render as a RECEIVED line so
+            // the loopback is visible on screen, not just over RTT.
+            bool own = (m.sender == proto_self_id()) && !audio_selftest();
+            ui_add_message(m.sender, text, own);
             DIAG("rc: rx from %02X len=%u\n", m.sender, m.len);
         }
 
