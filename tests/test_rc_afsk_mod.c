@@ -56,5 +56,26 @@ int main(void) {
     ASSERT_TRUE(n >= 30978 && n <= 30994);
     ASSERT_TRUE(n <= cap);
     free(buf);
+
+    // Bit order: 0x0F LSB-first -> data bits 0..3 = 1 (mark 1200 Hz), bits
+    // 4..7 = 0 (space 2200 Hz). After the 2400-sample carrier and the ~13.3
+    // sample start bit, window A (samples 2414..2465) covers data bits 0..3
+    // and window B (samples 2468..2519) covers data bits 4..7. Mark at
+    // 1200 Hz gives ~8 zero crossings per 52-sample window; space at 2200 Hz
+    // gives ~14. MSB-first encoding would swap the windows and fail both.
+    cap = afsk_mod_max_samples(1);
+    buf = malloc(cap * sizeof(int16_t));
+    uint8_t nibbles = 0x0F;
+    n = afsk_mod_render(&nibbles, 1, buf);
+    ASSERT_TRUE(n <= cap);
+    {
+        unsigned zc_a = zero_crossings(buf + 2414, 52);
+        unsigned zc_b = zero_crossings(buf + 2468, 52);
+        ASSERT_TRUE(zc_a >= 6 && zc_a <= 10);    // mark (1200 Hz) section
+        ASSERT_TRUE(zc_b >= 12 && zc_b <= 17);   // space (2200 Hz) section
+        ASSERT_TRUE(zc_a < zc_b);
+    }
+    free(buf);
+
     TEST_RETURN();
 }
