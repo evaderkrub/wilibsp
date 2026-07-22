@@ -108,7 +108,7 @@ void audio_i2s_duplex_play_loop(const uint32_t *buf, uint frames) {
 
 void audio_i2s_duplex_play_stream_loop(const uint32_t *buf, uint frames) {
     if (s_tx_dma[0] < 0) { s_tx_dma[0] = dma_claim_unused_channel(true); s_tx_dma[1] = dma_claim_unused_channel(true); }
-    s_stream_buf = buf; s_stream_frames = frames; s_stream_next = 2u * STREAM_CHUNK;
+    s_stream_buf = buf; s_stream_frames = frames; s_stream_next = (2u * STREAM_CHUNK) % frames;
     uint tx_dreq = pio_get_dreq(DPX_PIO, DPX_SM, true);
     if (!s_stream_irq_added) {
         irq_add_shared_handler(DMA_IRQ_0, audio_tx_dma_irq, PICO_SHARED_IRQ_HANDLER_DEFAULT_ORDER_PRIORITY);
