@@ -1013,16 +1013,15 @@ python tools/fw.py rtt          # in a second terminal
 ```
 
 1. Screen shows a black text area, a dim split line with zone hints, and
-   5 colored buttons labeled `abcde fghij klmno pqrst uvwxy`.
+   5 colored buttons labeled `ABCDE FGHIJ KLMNO PQRST UVWXY` (the display font folds lowercase to uppercase; the engine is on the lowercase page).
 2. RTT shows `uartkbd frames=N errors=0` with N climbing (~ frame rate of
    the keyboard firmware). frames=0 → link problem (pins/baud/firmware).
-3. Press GREEN then GREEN: types `m`; button labels show single chars
-   between the two presses.
-4. PAGE cycles labels lower → numbers → upper → lower; PAGE mid-chord
-   cancels without typing.
+3. Press GREEN then GREEN: types `m` — shown as `M` on screen; RTT `fw2kb char 'm'` is the authoritative case check.
+4. PAGE cycles pages, but the lower and upper letter pages look identical on screen (uppercase folding) — verify the transition via RTT char case (`'m'` vs `'M'`) and via the numbers page labels (`01234 56789 ...`).
 5. Tap below the split line = space; above = backspace.
 6. Every button press/release appears in RTT (`uartkbd btn N down/up`).
 7. If the checksum assumption is wrong (errors climbing, frames=0), fix
    `accept_frame()` in `bsp/input/uartkbd_parse.c` and re-run the parse
    tests — the assumption is isolated there by design.
+8. Symbol characters ` { } | ~ render as blanks on screen (font5x7 covers 0x20-0x5F only); RTT is authoritative.
 ```

@@ -34,7 +34,7 @@ static char    s_text[TEXT_MAX];
 static int     s_len;
 static bool    s_text_dirty = true;
 static bool    s_bar_dirty  = true;
-static char    s_bar_cache[5][6];
+static char    s_bar_cache[5][6];  /* 5 = fw2kb group width (labels are at most 5 chars) */
 
 static const uint16_t k_btn_cols[5] =
     { COL_GRAY, COL_YELLOW, COL_GREEN, COL_BLUE, COL_RED };
@@ -121,7 +121,7 @@ static void handle_fw2kb_events(void)
     fw2kb_event ev;
     while (fw2kb_next_event(&s_kb, &ev)) {
         switch (ev.key) {
-        case FW2KB_KEY_CHAR:      append_char(ev.ch); break;
+        case FW2KB_KEY_CHAR:      append_char(ev.ch); DIAG("fw2kb char '%c'\n", ev.ch); break;
         case FW2KB_KEY_BACKSPACE: if (s_len) { s_len--; s_text_dirty = true; } break;
         case FW2KB_KEY_ENTER:     append_char('\n'); break;
         case FW2KB_KEY_TAB:       for (int i = 0; i < 4; i++) append_char(' '); break;
@@ -154,8 +154,9 @@ int main(void)
 
         uint64_t now = time_us_64();
         if (now >= next_link_log) {
-            DIAG("uartkbd frames=%u errors=%u\n",
-                 (unsigned)uartkbd_frames(), (unsigned)uartkbd_errors());
+            DIAG("uartkbd frames=%u errors=%u flags=%x\n",
+                 (unsigned)uartkbd_frames(), (unsigned)uartkbd_errors(),
+                 (unsigned)uartkbd_flags());
             next_link_log = now + 1000000;
         }
         sleep_ms(2);
