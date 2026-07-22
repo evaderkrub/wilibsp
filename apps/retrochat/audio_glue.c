@@ -57,9 +57,10 @@ static void core1_main(void) {
     }
 }
 
-void audio_glue_init(void) {
+bool audio_glue_init(void) {
     msgq_init(&s_q);
     codec_nau88c10_init();
+    bool codec_ok = codec_nau88c10_input_ok();
     codec_nau88c10_dac_mute(false);
     audio_i2s_duplex_init(AFSK_FS);
     audio_capture_start();   // REQUIRED: drains the duplex RX FIFO. The PIO SM
@@ -69,6 +70,7 @@ void audio_glue_init(void) {
     pdm_capture_init();
     multicore_launch_core1(core1_main);
     DIAG("rc: audio glue up (mic=%d chunk=%u)\n", RX_MIC, RX_CHUNK);
+    return codec_ok;
 }
 
 void audio_tx_text(uint8_t sender, const char *text) {

@@ -11,7 +11,7 @@
 #include <stdbool.h>
 #include "modem/frame.h"
 
-void audio_glue_init(void);
+bool audio_glue_init(void);
 void audio_tx_text(uint8_t sender, const char *text);
 bool audio_tx_busy(void);
 int  audio_rx_pop(frame_msg_t *m);

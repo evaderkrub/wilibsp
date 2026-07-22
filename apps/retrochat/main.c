@@ -31,7 +31,7 @@ int main(void) {
 
     proto_init();
     ui_init(proto_self_id());
-    audio_glue_init();            // codec + duplex + capture drain + PDM + core 1
+    if (!audio_glue_init()) fatal_screen("CODEC FAIL");   // codec + duplex + capture drain + PDM + core 1
     DIAG("rc: up, id=%02X\n", proto_self_id());
 
     bool last_busy = false;
