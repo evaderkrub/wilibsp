@@ -1,0 +1,23 @@
+// audio_glue.h — binds the modem library to the FW2 audio hardware.
+// TX: render whole air frame into PSRAM, play once via the streamed I2S DMA loop,
+//     stop on a duration deadline (the stream API loops, so the buffer carries
+//     >=256 ms of trailing silence as stop slack).
+// RX: core 1 exclusively pulls the PDM mics and runs demod -> frame parser -> SPSC
+//     queue. During own TX the samples are pulled and discarded (half duplex),
+//     unless self-test mode is on.
+#ifndef RC_AUDIO_GLUE_H
+#define RC_AUDIO_GLUE_H
+#include <stdint.h>
+#include <stdbool.h>
+#include "modem/frame.h"
+
+void audio_glue_init(void);
+void audio_tx_text(uint8_t sender, const char *text);
+bool audio_tx_busy(void);
+int  audio_rx_pop(frame_msg_t *m);
+unsigned audio_rx_crc_errors(void);
+int  audio_rx_peak(void);
+void audio_set_selftest(bool on);
+bool audio_selftest(void);
+
+#endif
