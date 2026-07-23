@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include "audio_glue.h"
+#include "compose.h"
 #include "protocol.h"
 #include "ui.h"
 
@@ -32,6 +33,9 @@ int main(void) {
     proto_init();
     ui_init(proto_self_id());
     if (!audio_glue_init()) fatal_screen("CODEC FAIL");   // codec + duplex + capture drain + PDM + core 1
+    uartkbd_init();
+    static compose_t s_compose;      // static: keeps main()'s stack tiny
+    compose_init(&s_compose);
     DIAG("rc: up, id=%02X\n", proto_self_id());
 
     bool last_busy = false;
@@ -57,7 +61,44 @@ int main(void) {
             DIAG("rc: rx from %02X len=%u\n", m.sender, m.len);
         }
 
-        ui_action_t a = ui_poll();
+        // Physical chord keyboard.
+        uartkbd_task();
+        bool was_composing = compose_active(&s_compose);
+        compose_result_t cr = COMPOSE_NONE;
+        uartkbd_event_t kev;
+        while (uartkbd_next_event(&kev)) {
+            compose_result_t r = compose_button(&s_compose, kev.btn, kev.pressed);
+            if (r != COMPOSE_NONE) cr = r;   // last meaningful result wins
+        }
+        // While composing, touch feeds space/backspace instead of the grid.
+        if (compose_active(&s_compose)) {
+            static bool kb_was_down;
+            uint16_t tx, ty;
+            bool tdown = ft6336_poll(&tx, &ty);
+            if (tdown && !kb_was_down) {
+                compose_result_t r = compose_touch(&s_compose, (int)tx, (int)ty);
+                if (r != COMPOSE_NONE) cr = r;
+            }
+            kb_was_down = tdown;
+        }
+        if (cr == COMPOSE_SEND && !busy) {
+            proto_send_text(compose_draft(&s_compose));
+            ui_add_message(proto_self_id(), compose_draft(&s_compose), true);
+            compose_clear(&s_compose);
+            ui_compose_hide();
+            DIAG("rc: kbd send\n");
+        } else if (cr == COMPOSE_CANCELLED) {
+            ui_compose_hide();
+        } else if (cr == COMPOSE_CHANGED) {
+            const char *labels[5];
+            compose_labels(&s_compose, labels);
+            ui_compose_show(compose_draft(&s_compose), labels);
+        }
+        if (was_composing && !compose_active(&s_compose) && cr == COMPOSE_NONE) {
+            // defensive: nothing; compose only exits via send/cancel above
+        }
+
+        ui_action_t a = compose_active(&s_compose) ? UI_NONE : ui_poll();
         if (a == UI_SELFTEST_TOGGLE) {
             audio_set_selftest(!audio_selftest());
             ui_set_status(busy, audio_selftest());
@@ -75,10 +116,10 @@ int main(void) {
             ui_set_stats(err, audio_rx_peak());
             if (err != last_err) DIAG("rc: crc errors=%u\n", err);
             last_err = err;
-            DIAG("rc: hb=%u qdrop=%u pcm=%u bytes=%u pkmax=%d\n",
+            DIAG("rc: hb=%u qdrop=%u pcm=%u bytes=%u pkmax=%d kf=%u ke=%u\n",
                  audio_rx_heartbeat(), audio_rx_qdrops(),
                  audio_dbg_pcm_total(), audio_dbg_bytes_total(),
-                 audio_dbg_peak_max());
+                 audio_dbg_peak_max(), uartkbd_frames(), uartkbd_errors());
             next_stats = make_timeout_time_ms(500);
         }
         sleep_ms(10);
