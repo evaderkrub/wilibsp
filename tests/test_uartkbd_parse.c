@@ -216,6 +216,143 @@ static void test_first_frame_primes_without_events(void)
     CHECK(releases == 8);                               /* ring holds last 8 */
 }
 
+/* Build a valid frame with the given charger payload bytes 10-21
+ * (buttons all idle). */
+static void mk_frame_chg(uint8_t f[UARTKBD_FRAME_LEN], const uint8_t chg[12])
+{
+    memset(f, 0, UARTKBD_FRAME_LEN);
+    f[0] = 0xBD; f[1] = 0x1D;
+    memcpy(&f[10], chg, 12);
+    uint8_t sum = 0;
+    for (int i = 0; i < UARTKBD_FRAME_LEN - 1; i++) sum = (uint8_t)(sum + f[i]);
+    f[UARTKBD_FRAME_LEN - 1] = sum;
+}
+
+static void test_charger_unavailable_before_first_frame(void)
+{
+    uartkbd_parser_t p;
+    uartkbd_parse_init(&p);
+    uartkbd_charger_t c;
+    CHECK(!uartkbd_parse_charger(&p, &c));
+}
+
+static void test_charger_available_from_priming_frame(void)
+{
+    /* The button baseline needs two frames (priming), but charger data is
+     * level state — it must be readable after the very first valid frame. */
+    uartkbd_parser_t p;
+    uartkbd_parse_init(&p);
+    prime(&p);                     /* one all-zero frame */
+    uartkbd_charger_t c;
+    CHECK(uartkbd_parse_charger(&p, &c));
+    CHECK(c.vbus_mv == 2600);      /* code 0 endpoints */
+    CHECK(c.vsys_mv == 2304);
+    CHECK(c.vbatt_mv == 2304);
+    CHECK(c.current_ma == 0);
+    CHECK(c.temp_tspct == 210);
+    CHECK(c.charge_status == UARTKBD_CHG_NOT_CHARGING);
+    CHECK(c.vbus_status == UARTKBD_VBUS_NONE);
+    CHECK(c.fault == UARTKBD_FAULT_NORMAL);
+    CHECK(c.temp_rank == UARTKBD_RANK_NORMAL);
+    CHECK(c.cc_tier == UARTKBD_CC_NONE);
+    CHECK(!c.vsys_regulation && !c.thermal_regulation && !c.vbus_attached);
+    CHECK(c.cc1_mv == 0 && c.cc2_mv == 0);
+}
+
+static void test_charger_scaling_and_decode(void)
+{
+    uartkbd_parser_t p;
+    uartkbd_parse_init(&p);
+    prime(&p);
+    /* bytes 10-21: vbus=127, vsys=127, vbatt=64, curr=127, temp=255,
+     * status=FastCharge, vbus_status=OTG, fault=Thermal, rank=Cold,
+     * bitfield=0x1D (tier 3 + vsys_reg + vbus_attached), cc1=255, cc2=100 */
+    const uint8_t chg[12] = { 127, 127, 64, 127, 255, 2, 7, 2, 5, 0x1D, 255, 100 };
+    uint8_t f[UARTKBD_FRAME_LEN];
+    mk_frame_chg(f, chg);
+    feed(&p, f, UARTKBD_FRAME_LEN);
+
+    uartkbd_charger_t c;
+    CHECK(uartkbd_parse_charger(&p, &c));
+    CHECK(c.vbus_mv == 15300);                 /* 2600 + 127*100 */
+    CHECK(c.vsys_mv == 4844);                  /* 2304 + 127*20 */
+    CHECK(c.vbatt_mv == 3584);                 /* 2304 + 64*20 */
+    CHECK(c.current_ma == 6350);               /* 127*50 */
+    CHECK(c.temp_tspct == 1395);               /* 255*465/100 + 210 */
+    CHECK(c.charge_status == UARTKBD_CHG_FASTCHARGE);
+    CHECK(c.vbus_status == UARTKBD_VBUS_OTG);
+    CHECK(c.fault == UARTKBD_FAULT_THERMAL);
+    CHECK(c.temp_rank == UARTKBD_RANK_COLD);
+    CHECK(c.cc_tier == UARTKBD_CC_3A);
+    CHECK(c.vsys_regulation);
+    CHECK(!c.thermal_regulation);
+    CHECK(c.vbus_attached);
+    CHECK(c.cc1_mv == 2040);                   /* 255*8 */
+    CHECK(c.cc2_mv == 800);                    /* 100*8 */
+    /* no button events from a charger-only change */
+    uartkbd_event_t ev;
+    CHECK(!uartkbd_parse_next_event(&p, &ev));
+}
+
+static void test_charger_midpoint_scaling(void)
+{
+    uartkbd_parser_t p;
+    uartkbd_parse_init(&p);
+    prime(&p);
+    const uint8_t chg[12] = { 50, 100, 1, 10, 100, 0, 0, 0, 0, 0, 0, 1 };
+    uint8_t f[UARTKBD_FRAME_LEN];
+    mk_frame_chg(f, chg);
+    feed(&p, f, UARTKBD_FRAME_LEN);
+    uartkbd_charger_t c;
+    CHECK(uartkbd_parse_charger(&p, &c));
+    CHECK(c.vbus_mv == 7600);      /* 2600 + 50*100 */
+    CHECK(c.vsys_mv == 4304);      /* 2304 + 100*20 */
+    CHECK(c.vbatt_mv == 2324);     /* 2304 + 1*20 */
+    CHECK(c.current_ma == 500);    /* 10*50 */
+    CHECK(c.temp_tspct == 675);    /* 100*465/100 + 210 */
+    CHECK(c.cc2_mv == 8);
+}
+
+static void test_charger_undocumented_code_passthrough(void)
+{
+    /* Enum fields carry the raw code verbatim — vbus_status 5 is not in the
+     * doc (0,1,2,7) and must pass through unclamped. */
+    uartkbd_parser_t p;
+    uartkbd_parse_init(&p);
+    prime(&p);
+    const uint8_t chg[12] = { 0, 0, 0, 0, 0, 9, 5, 7, 4, 0, 0, 0 };
+    uint8_t f[UARTKBD_FRAME_LEN];
+    mk_frame_chg(f, chg);
+    feed(&p, f, UARTKBD_FRAME_LEN);
+    uartkbd_charger_t c;
+    CHECK(uartkbd_parse_charger(&p, &c));
+    CHECK(c.charge_status == 9);
+    CHECK(c.vbus_status == 5);
+    CHECK(c.fault == 7);
+    CHECK(c.temp_rank == 4);
+}
+
+static void test_charger_bad_checksum_keeps_old_snapshot(void)
+{
+    uartkbd_parser_t p;
+    uartkbd_parse_init(&p);
+    prime(&p);
+    const uint8_t good[12] = { 50, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0 };
+    uint8_t f[UARTKBD_FRAME_LEN];
+    mk_frame_chg(f, good);
+    feed(&p, f, UARTKBD_FRAME_LEN);
+
+    const uint8_t bad[12] = { 99, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0 };
+    mk_frame_chg(f, bad);
+    f[UARTKBD_FRAME_LEN - 1] ^= 0xFF;          /* corrupt checksum */
+    feed(&p, f, UARTKBD_FRAME_LEN);
+
+    uartkbd_charger_t c;
+    CHECK(uartkbd_parse_charger(&p, &c));
+    CHECK(c.vbus_mv == 7600);                  /* still the good frame's 50 */
+    CHECK(c.charge_status == UARTKBD_CHG_PRECHARGE);
+}
+
 int main(void)
 {
     test_valid_frame_latches_buttons();
@@ -228,6 +365,12 @@ int main(void)
     test_ring_overflow_drops_oldest();
     test_split_delivery();
     test_first_frame_primes_without_events();
+    test_charger_unavailable_before_first_frame();
+    test_charger_available_from_priming_frame();
+    test_charger_scaling_and_decode();
+    test_charger_midpoint_scaling();
+    test_charger_undocumented_code_passthrough();
+    test_charger_bad_checksum_keeps_old_snapshot();
     if (g_failures == 0) printf("test_uartkbd_parse: all passed\n");
     TEST_RETURN();
 }

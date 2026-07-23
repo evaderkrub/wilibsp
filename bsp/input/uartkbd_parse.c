@@ -57,6 +57,8 @@ static void accept_frame(uartkbd_parser_t *p)
     }
     p->frames++;
     p->flags = decode_flags(p->frame);
+    memcpy(p->charger_raw, &p->frame[10], sizeof p->charger_raw);
+    p->charger_valid = true;
     uint16_t nb = decode_buttons(p->frame);
     if (!p->primed) {
         p->primed = true;
@@ -114,3 +116,26 @@ uint16_t uartkbd_parse_buttons(const uartkbd_parser_t *p) { return p->buttons; }
 uint8_t  uartkbd_parse_flags(const uartkbd_parser_t *p)   { return p->flags; }
 uint32_t uartkbd_parse_frames(const uartkbd_parser_t *p)  { return p->frames; }
 uint32_t uartkbd_parse_errors(const uartkbd_parser_t *p)  { return p->errors; }
+
+/* Scaling per Wilikeyboard.md bytes 10-21 — applied only here, on demand. */
+bool uartkbd_parse_charger(const uartkbd_parser_t *p, uartkbd_charger_t *out)
+{
+    if (!p->charger_valid) return false;
+    const uint8_t *r = p->charger_raw;
+    out->vbus_mv    = (uint16_t)(2600u + r[0] * 100u);
+    out->vsys_mv    = (uint16_t)(2304u + r[1] * 20u);
+    out->vbatt_mv   = (uint16_t)(2304u + r[2] * 20u);
+    out->current_ma = (uint16_t)(r[3] * 50u);
+    out->temp_tspct = (uint16_t)(r[4] * 465u / 100u + 210u);
+    out->charge_status = r[5];
+    out->vbus_status   = r[6];
+    out->fault         = r[7];
+    out->temp_rank     = r[8];
+    out->cc_tier            = (uint8_t)((r[9] >> 3) & 0x03u);
+    out->vsys_regulation    = (r[9] & 0x04u) != 0;
+    out->thermal_regulation = (r[9] & 0x02u) != 0;
+    out->vbus_attached      = (r[9] & 0x01u) != 0;
+    out->cc1_mv = (uint16_t)(r[10] * 8u);
+    out->cc2_mv = (uint16_t)(r[11] * 8u);
+    return true;
+}
