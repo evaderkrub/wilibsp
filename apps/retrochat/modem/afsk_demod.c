@@ -45,7 +45,8 @@ unsigned afsk_demod_process(afsk_demod_t *d, const int16_t *pcm, unsigned n,
         // a boundary on each decision transition (proportional term), and adjust the
         // free-running rate (pll_freq, integral term) so a constant TX/RX clock
         // offset settles to zero steady-state phase error instead of a fixed lag;
-        // sample the decision once per bit at mid-phase.
+        // the bit decision itself is taken once per bit, by majority vote over
+        // the middle half of the bit period (below), not a single sample.
         uint32_t prev = d->pll;
         d->pll += (uint32_t)((int32_t)PLL_INC + d->pll_freq);
         if (dec != d->last_dec) {

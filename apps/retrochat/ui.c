@@ -168,26 +168,32 @@ void ui_init(uint8_t self_id) {
 
 // Touch: act on release for taps; long-press (>=1 s) in the status bar toggles
 // self-test (fires while still held, then swallows the release).
+static bool s_was_down, s_swallow;
+
+void ui_poll_reset(void) {
+    s_was_down = false;
+    s_swallow = false;
+}
+
 ui_action_t ui_poll(void) {
-    static bool was_down, swallow;
     static uint16_t down_x, down_y;
     static absolute_time_t down_t;
     uint16_t x, y;
     bool down = ft6336_poll(&x, &y);
 
-    if (down && !was_down) {           // press
-        was_down = true; swallow = false;
+    if (down && !s_was_down) {         // press
+        s_was_down = true; s_swallow = false;
         down_x = x; down_y = y; down_t = get_absolute_time();
         return UI_NONE;
     }
-    if (down && was_down && !swallow && down_y < STATUS_H &&
+    if (down && s_was_down && !s_swallow && down_y < STATUS_H &&
         absolute_time_diff_us(down_t, get_absolute_time()) >= 1000000) {
-        swallow = true;                // long-press fired; ignore the release
+        s_swallow = true;              // long-press fired; ignore the release
         return UI_SELFTEST_TOGGLE;
     }
-    if (!down && was_down) {           // release
-        was_down = false;
-        if (swallow) return UI_NONE;
+    if (!down && s_was_down) {         // release
+        s_was_down = false;
+        if (s_swallow) return UI_NONE;
         if (down_y >= GRID_Y) {
             int row = (down_y - GRID_Y) / BTN_H;
             if (row >= GRID_ROWS) row = GRID_ROWS - 1;

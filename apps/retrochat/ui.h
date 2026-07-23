@@ -16,6 +16,9 @@ void ui_add_message(uint8_t sender, const char *text, bool own);
 void ui_set_status(bool txing, bool selftest);
 void ui_set_stats(unsigned crc_err, int peak);
 ui_action_t ui_poll(void);
+// Clear ui_poll's press-tracking state (call when compose mode takes over
+// touch, so a stale release doesn't fire a canned send on return to the grid).
+void ui_poll_reset(void);
 
 // Compose bar: replaces the canned grid while typing on the chord keyboard.
 void ui_compose_show(const char *draft, const char *labels[5]);

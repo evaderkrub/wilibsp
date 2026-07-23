@@ -1,5 +1,6 @@
 // RetroChat — acoustic-modem broadcast chat for the Free-Wili 2.
-// TX: Bell 202 AFSK (1200/2200 Hz, 1200 baud) out the speaker via streamed I2S DMA.
+// TX: 300 baud AFSK using Bell 202 tones (1200/2200 Hz) out the speaker via
+// streamed I2S DMA.
 // RX: core 1 demodulates the onboard PDM mic stream continuously (broadcast party
 // line; no pairing). Long-press the status bar to toggle acoustic self-test
 // (device decodes its own speaker). Diagnostics: fw rtt.
@@ -94,9 +95,7 @@ int main(void) {
             compose_labels(&s_compose, labels);
             ui_compose_show(compose_draft(&s_compose), labels);
         }
-        if (was_composing && !compose_active(&s_compose) && cr == COMPOSE_NONE) {
-            // defensive: nothing; compose only exits via send/cancel above
-        }
+        if (!was_composing && compose_active(&s_compose)) ui_poll_reset();
 
         ui_action_t a = compose_active(&s_compose) ? UI_NONE : ui_poll();
         if (a == UI_SELFTEST_TOGGLE) {

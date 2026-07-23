@@ -15,6 +15,14 @@ ticks).
   the demodulator stays live during TX, so tapping any canned button makes the
   device decode its own transmission through the air — a one-device
   end-to-end check. Long-press again to exit.
+- **Typing:** the physical chord keyboard replaces the canned grid with a
+  compose bar. Each character is a two-press chord: the first color button
+  picks a group, the second picks the character within it; `PAGE` cycles
+  pages or cancels a half-chord. `NAV_CENTER` sends the draft, `NAV_LEFT`
+  backspaces, `NAV_RIGHT` inserts a space. While composing, touch takes over
+  from the canned grid: touching the lower half of the screen types a space,
+  the upper half backspaces. `CANCEL` discards the draft and restores the
+  canned grid.
 
 ## Test sequence
 
@@ -79,4 +87,5 @@ Two more hardware-driven fixes from the same bench session:
   init batch (dump between `RdOff` and `WrOff`, then advance `RdOff`) —
   short sessions issued back-to-back are reliable.
 - RTT stats line (every 500 ms): `rc: hb=<core1 loops> qdrop=<queue drops>
-  pcm=<samples pulled> bytes=<demod bytes> pkmax=<max demod peak since last>`.
+  pcm=<samples pulled> bytes=<demod bytes> pkmax=<max demod peak since last>
+  kf=<uart keyboard frames> ke=<uart keyboard errors>`.

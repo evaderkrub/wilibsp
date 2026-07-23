@@ -42,12 +42,12 @@ compose_result_t compose_button(compose_t *c, uartkbd_btn_t btn, bool pressed) {
         fw2kb_press(&c->kb, FW2KB_BTN_AI);    // cycle page / cancel half-chord
         return COMPOSE_CHANGED;
     case UARTKBD_BTN_NAV_LEFT:
-        if (!c->active) return COMPOSE_NONE;
-        if (c->len) c->draft[--c->len] = '\0';
+        if (!c->active || !c->len) return COMPOSE_NONE;
+        c->draft[--c->len] = '\0';
         return COMPOSE_CHANGED;
     case UARTKBD_BTN_NAV_RIGHT:
-        if (!c->active) return COMPOSE_NONE;
-        if (c->len < FRAME_MAX_PAYLOAD) { c->draft[c->len++] = ' '; c->draft[c->len] = '\0'; }
+        if (!c->active || c->len >= FRAME_MAX_PAYLOAD) return COMPOSE_NONE;
+        c->draft[c->len++] = ' '; c->draft[c->len] = '\0';
         return COMPOSE_CHANGED;
     case UARTKBD_BTN_NAV_CENTER:
         return (c->active && c->len) ? COMPOSE_SEND : COMPOSE_NONE;

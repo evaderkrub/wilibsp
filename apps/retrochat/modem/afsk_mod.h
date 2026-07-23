@@ -1,7 +1,7 @@
 // modem/afsk_mod.h — Bell 202 AFSK modulator: 1200 Hz mark / 2200 Hz space,
-// 1200 baud, 16 kHz int16 PCM. Phase-continuous DDS (32-bit phase accumulator,
+// 300 baud, 16 kHz int16 PCM. Phase-continuous DDS (32-bit phase accumulator,
 // 256-entry sine LUT). Bit timing uses a Q16.16 accumulator so the non-integer
-// 13.333 samples/bit is exact over any frame length.
+// 53.33 samples/bit is exact over any frame length.
 #ifndef RC_AFSK_MOD_H
 #define RC_AFSK_MOD_H
 #include <stdint.h>
