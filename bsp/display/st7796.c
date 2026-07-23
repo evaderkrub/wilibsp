@@ -217,7 +217,6 @@ void st7796_draw_text(int x, int y, int scale, uint16_t fg_be, uint16_t bg_be,
     for (; *s; s++, x += w) {
         if (x + w > ST7796_W || y + h > ST7796_H || x < 0 || y < 0) break;
         char c = *s;
-        if (c >= 'a' && c <= 'z') c -= 'a' - 'A';
         const uint8_t *cols = (c >= FONT5X7_FIRST && c <= FONT5X7_LAST)
                                   ? font5x7[c - FONT5X7_FIRST]
                                   : font5x7[0];

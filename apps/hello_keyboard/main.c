@@ -1,30 +1,38 @@
 // hello_keyboard — fw2kb two-press chord keyboard on the ST7796, driven by
 // the FW2 UART keyboard (GREY/YELLOW/GREEN/BLUE/RED chords, PAGE cycles
-// pages) with touch space/backspace (below/above the split line).
-// Layout (480x320 landscape): text area y 0-271, button bar y 272-319.
+// pages) with touch space/backspace (below/above the split line; the soft
+// buttons are display-only). Layout: text area above a one-line button bar
+// styled after the FW2 firmware soft menu (see BAR_* defines).
 #include <string.h>
 #include "fw2.h"
 #include "platform/diag.h"
 #include "pico/stdlib.h"
 
-/* RGB565 colors, byte-swapped to wire (big-endian) order per st7796.h */
+/* RGB565 colors, byte-swapped to wire (big-endian) order per st7796.h.
+ * Button colors match the FW2 firmware soft menu exactly
+ * (rpPanelManager::drawMenu). */
 #define COL_BLACK  0x0000
 #define COL_WHITE  0xFFFF
-#define COL_GRAY   0x1084   /* 0x8410 */
-#define COL_YELLOW 0xE0FF   /* 0xFFE0 */
-#define COL_GREEN  0xE007   /* 0x07E0 */
-#define COL_BLUE   0x1F00   /* 0x001F */
-#define COL_RED    0x00F8   /* 0xF800 */
+#define COL_GRAY   0x9AD6   /* #d6d2d6 */
+#define COL_YELLOW 0x06FF   /* #ffe331 */
+#define COL_GREEN  0x0012   /* #104100 */
+#define COL_BLUE   0xF800   /* #001cc5 */
+#define COL_RED    0x0780   /* #84003a */
 #define COL_DIM    0xE739   /* 0x39E7 */
-
-#define BAR_Y       272
-#define BAR_H       48
-#define BTN_W       96
-#define TOUCH_SPLIT 136     /* fw2kb threshold: y > 136 = space, else backspace */
 
 #define TEXT_SCALE 2
 #define CHAR_W     (6 * TEXT_SCALE)
 #define LINE_H     (8 * TEXT_SCALE)
+
+/* Soft-button bar: one text line + 6 px tall to keep the app's screen space;
+ * box geometry matches the FW2 firmware soft menu (rpPanelManager::drawMenu):
+ * width (W-12)/5 = 93, 3 px spacing, no overlap. */
+#define BAR_H       (LINE_H + 6)
+#define BAR_Y       (ST7796_H - BAR_H)
+#define BTN_W       ((ST7796_W - 12) / 5)   /* 93 */
+#define BTN_PITCH   (BTN_W + 3)             /* 96 */
+#define TOUCH_SPLIT (BAR_Y / 2)  /* fw2kb threshold: y > split = space, else backspace */
+
 #define TEXT_COLS  (ST7796_W / CHAR_W)
 #define TEXT_ROWS  (BAR_Y / LINE_H)
 #define TEXT_MAX   1024
@@ -43,14 +51,15 @@ static void draw_bar(void)
 {
     const char *labels[5];
     fw2kb_get_labels(&s_kb, labels);
+    st7796_fill_rect(0, BAR_Y, ST7796_W, BAR_H, COL_BLACK);  /* clear the 3 px gaps */
     for (int i = 0; i < 5; i++) {
-        int x = i * BTN_W;
+        int x = i * BTN_PITCH;
         st7796_fill_rect(x, BAR_Y, BTN_W, BAR_H, k_btn_cols[i]);
         int len = (int)strlen(labels[i]);
         if (len > 5) len = 5;
         int tx = x + (BTN_W - len * CHAR_W) / 2;
-        int ty = BAR_Y + (BAR_H - 8 * TEXT_SCALE) / 2;
-        st7796_draw_text(tx, ty, TEXT_SCALE, COL_BLACK, k_btn_cols[i], labels[i]);
+        st7796_draw_text(tx, BAR_Y + (BAR_H - LINE_H) / 2, TEXT_SCALE,
+                         COL_WHITE, k_btn_cols[i], labels[i]);
         strncpy(s_bar_cache[i], labels[i], 5);
         s_bar_cache[i][5] = 0;
     }
@@ -108,10 +117,13 @@ static void handle_buttons(void)
 
 static void handle_touch(void)
 {
+    /* Touch-down edge only. The soft-button rectangles are display-only, not
+     * touch targets: the whole screen is one space/backspace surface, so a
+     * touch on the bar is just a touch low on the screen (= space). */
     static bool was_down = false;
     uint16_t x, y;
     bool down = ft6336_poll(&x, &y);
-    if (down && !was_down && y < BAR_Y)              /* touch-down edge only */
+    if (down && !was_down)
         fw2kb_touch(&s_kb, (int)x, (int)y);
     was_down = down;
 }

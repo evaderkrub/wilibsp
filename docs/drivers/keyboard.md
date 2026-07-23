@@ -49,7 +49,10 @@ backspace (above). Button state arrives from the FW2 UART keyboard
 touch zones). Link health: `uartkbd_frames()` / `uartkbd_errors()` — a
 healthy link shows frames climbing and errors static.
 
-**Display caveat:** The ST7796 built-in font uppercases lowercase and lacks glyphs above 0x5F, so on-screen text is uppercase-folded and some symbols (backtick, braces, pipe, tilde) render as blanks. The text buffer and fw2kb output are case-correct — use the RTT `fw2kb char` log to verify actual characters.
+**Display note:** `font5x7`/`st7796_draw_text` cover full printable ASCII
+0x20-0x7E (lowercase included) as of the fw2kb work — the earlier
+uppercase-folding caveat no longer applies. The RTT `fw2kb char` log remains
+the authoritative record of generated characters.
 
 **Protocol assumptions to re-verify when the keyboard firmware lands**
 (the PIC-side firmware was being updated when this driver was written):

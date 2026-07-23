@@ -31,7 +31,7 @@ void st7796_blit_rect(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1,
 
 // Draw ASCII text with the built-in 5x7 font at integer scale (1..4): each
 // glyph cell is 6*scale x 8*scale, drawn as one block window per character
-// (the proven write shape). Lowercase maps to uppercase; unknown chars are
+// (the proven write shape). Full printable ASCII 0x20-0x7E; unknown chars are
 // blanks. Text that would overrun the panel edge is clipped at whole chars.
 void st7796_draw_text(int x, int y, int scale, uint16_t fg_be, uint16_t bg_be,
                       const char *s);
