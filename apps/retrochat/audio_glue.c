@@ -24,6 +24,12 @@ static volatile unsigned s_crc_err;
 static volatile unsigned s_hb;          // core-1 loop heartbeat
 static volatile unsigned s_qdrop;       // rx queue full, dropped (core-1 must not DIAG)
 static volatile int s_peak;
+// Bench diagnostics (read from core 0 over RTT): total PCM samples pulled,
+// total demod bytes produced, and a max-hold of the demod peak so short TX
+// bursts survive the 500 ms stats poll (s_peak itself decays in ~64 ms).
+static volatile unsigned s_pcm_total;
+static volatile unsigned s_bytes_total;
+static volatile int s_peak_max;
 static msgq_t s_q;
 static absolute_time_t s_tx_end;
 static bool s_playing;
@@ -42,6 +48,7 @@ static void core1_main(void) {
         int16_t *dst[PDM_NUM_MICS] = { pcm[0], pcm[1], pcm[2], pcm[3] };
         unsigned n = pdm_capture_pull(dst, RX_CHUNK);
         if (!n) { tight_loop_contents(); continue; }
+        s_pcm_total += n;
         if (s_txing && !s_selftest) { was_tx = true; continue; }  // drain + discard own TX
         if (was_tx) {                     // fresh DSP state after our own noise
             afsk_demod_init(&dem);
@@ -50,6 +57,8 @@ static void core1_main(void) {
         }
         unsigned nb = afsk_demod_process(&dem, pcm[RX_MIC], n, bytes, sizeof bytes);
         s_peak = dem.peak;
+        s_bytes_total += nb;
+        if (dem.peak > s_peak_max) s_peak_max = dem.peak;
         for (unsigned i = 0; i < nb; i++) {
             int r = frame_parser_push(&fp, bytes[i], &msg);
             if (r == 1) {
@@ -96,7 +105,11 @@ void audio_tx_text(uint8_t sender, const char *text) {
     codec_nau88c10_dac_mute(false);
     codec_nau88c10_set_output(RC_TX_OUTPUT);
     audio_i2s_duplex_play_stream_loop(TX_BUF, padded);
-    s_tx_end  = make_timeout_time_us((uint64_t)ns * 1000000ull / AFSK_FS + 30000ull);
+    // Stop deadline: render length + 150 ms. The I2S pipeline has ~25-30 ms of
+    // start latency, so a tight deadline cuts the frame tail (the CRC!) off the
+    // air; the buffer carries >=256 ms of trailing silence, so stopping late is
+    // safe as long as it beats the stream-loop wrap.
+    s_tx_end  = make_timeout_time_us((uint64_t)ns * 1000000ull / AFSK_FS + 150000ull);
     s_playing = true;
     DIAG("rc: tx %u bytes -> %u samples (%u padded)\n", nb, ns, padded);
 }
@@ -117,5 +130,8 @@ unsigned audio_rx_crc_errors(void) { return s_crc_err; }
 unsigned audio_rx_heartbeat(void) { return s_hb; }
 unsigned audio_rx_qdrops(void) { return s_qdrop; }
 int audio_rx_peak(void) { return s_peak; }
+unsigned audio_dbg_pcm_total(void) { return s_pcm_total; }
+unsigned audio_dbg_bytes_total(void) { return s_bytes_total; }
+int audio_dbg_peak_max(void) { int p = s_peak_max; s_peak_max = 0; return p; }
 void audio_set_selftest(bool on) { s_selftest = on; }
 bool audio_selftest(void) { return s_selftest; }

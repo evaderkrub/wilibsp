@@ -52,12 +52,13 @@ int main(void) {
     int16_t *work  = malloc((cap + cap / 50 + 8) * sizeof(int16_t));
     unsigned n = afsk_mod_render(fb, nb, clean);
 
-    // SNR sweep. Signal RMS = 12000/sqrt(2) ~ 8485. Uniform noise in [-A,A] has
-    // RMS A/sqrt(3): A = 8485*sqrt(3)/10^(SNR/20). 20 dB -> A~1470, 10 dB -> A~4647.
+    // SNR sweep. Signal RMS ~ 24000/sqrt(2) ~ 16970 (mark; space slightly less
+    // with pre-emphasis). Uniform noise in [-A,A] has RMS A/sqrt(3):
+    // A = 16970*sqrt(3)/10^(SNR/20). 20 dB -> A~2939, 10 dB -> A~9294.
     struct { int amp; int must_pass; } lv[] = {
-        { 1470, 1 },   // 20 dB SNR: required
-        { 4647, 1 },   // 10 dB SNR: required
-        { 8268, 0 },   //  5 dB SNR: informational only
+        { 2939,  1 },  // 20 dB SNR: required
+        { 9294,  1 },  // 10 dB SNR: required
+        { 16528, 0 },  //  5 dB SNR: informational only
     };
     for (unsigned t = 0; t < 3; t++) {
         int pass = 1;

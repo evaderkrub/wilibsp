@@ -75,7 +75,10 @@ int main(void) {
             ui_set_stats(err, audio_rx_peak());
             if (err != last_err) DIAG("rc: crc errors=%u\n", err);
             last_err = err;
-            DIAG("rc: hb=%u qdrop=%u\n", audio_rx_heartbeat(), audio_rx_qdrops());
+            DIAG("rc: hb=%u qdrop=%u pcm=%u bytes=%u pkmax=%d\n",
+                 audio_rx_heartbeat(), audio_rx_qdrops(),
+                 audio_dbg_pcm_total(), audio_dbg_bytes_total(),
+                 audio_dbg_peak_max());
             next_stats = make_timeout_time_ms(500);
         }
         sleep_ms(10);

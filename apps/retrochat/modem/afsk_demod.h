@@ -22,6 +22,7 @@ typedef struct afsk_demod {
     int last_dec;
     int bit_idx;                   // -1 = hunting start bit, else 0..8
     unsigned shift;
+    int vote, vcnt;                // majority vote over the middle half of a bit
     int16_t peak;                  // decaying |signal| peak (UI level meter)
 } afsk_demod_t;
 

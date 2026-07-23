@@ -19,6 +19,11 @@ unsigned audio_rx_crc_errors(void);
 unsigned audio_rx_heartbeat(void);
 unsigned audio_rx_qdrops(void);
 int  audio_rx_peak(void);
+// Bench diagnostics: cumulative PDM samples pulled, cumulative demod byte
+// output, and max-held demod peak (clears on read).
+unsigned audio_dbg_pcm_total(void);
+unsigned audio_dbg_bytes_total(void);
+int  audio_dbg_peak_max(void);
 void audio_set_selftest(bool on);
 bool audio_selftest(void);
 

@@ -1,7 +1,8 @@
 #include "afsk_demod.h"
+#include "afsk_mod.h"   // AFSK_BAUD / AFSK_FS: bit clock must match the modulator
 #include <string.h>
 
-#define PLL_INC ((uint32_t)(((uint64_t)1200u << 16) / 16000u))  // 4915
+#define PLL_INC ((uint32_t)(((uint64_t)AFSK_BAUD << 16) / AFSK_FS))
 
 void afsk_demod_init(afsk_demod_t *d) {
     memset(d, 0, sizeof *d);
@@ -56,15 +57,24 @@ unsigned afsk_demod_process(afsk_demod_t *d, const int16_t *pcm, unsigned n,
             if (d->pll_freq < -(int32_t)(PLL_INC / 50)) d->pll_freq = -(int32_t)(PLL_INC / 50);
             d->last_dec = dec;
         }
-        if ((prev & 0xFFFFu) < 0x8000u && (d->pll & 0xFFFFu) >= 0x8000u) {
+        // Bit decision by majority vote over the middle half of the bit period
+        // (phase 0x4000..0xC000) instead of a single mid-bit sample: integrates
+        // out both additive noise and the mid-bit discriminator chatter that
+        // ringing acoustic channels produce. Neither window edge wraps phase 0,
+        // so plain threshold-crossing checks are safe.
+        uint32_t ph_prev = prev & 0xFFFFu, ph_now = d->pll & 0xFFFFu;
+        if (ph_prev < 0x4000u && ph_now >= 0x4000u) { d->vote = 0; d->vcnt = 0; }
+        if (ph_now >= 0x4000u && ph_now < 0xC000u)  { d->vote += dec; d->vcnt++; }
+        if (ph_prev < 0xC000u && ph_now >= 0xC000u) {
+            int bit = (d->vcnt > 0) && (2 * d->vote >= d->vcnt);
             // UART deframer, LSB first.
             if (d->bit_idx < 0) {
-                if (dec == 0) { d->bit_idx = 0; d->shift = 0; }  // start bit
+                if (bit == 0) { d->bit_idx = 0; d->shift = 0; }  // start bit
             } else if (d->bit_idx < 8) {
-                d->shift |= (unsigned)dec << d->bit_idx;
+                d->shift |= (unsigned)bit << d->bit_idx;
                 d->bit_idx++;
             } else {
-                if (dec == 1 && cnt < max_out)                   // stop bit valid
+                if (bit == 1 && cnt < max_out)                   // stop bit valid
                     bytes_out[cnt++] = (uint8_t)d->shift;
                 d->bit_idx = -1;                                 // framing err -> resync
             }
