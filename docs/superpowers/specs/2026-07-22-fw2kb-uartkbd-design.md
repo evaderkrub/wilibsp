@@ -71,6 +71,11 @@ frame's, and push one press/release event per changed button into a small
 fixed ring (8 entries, oldest dropped — same policy as fw2kb). Detect flags
 update silently.
 
+Amendment (2026-07-22, hardware finding): the first valid frame primes the
+baseline without emitting events — the keyboard coprocessor's boot frames
+carry garbage button bits that otherwise produce phantom presses (observed:
+a phantom PAGE press cycling the keyboard off its boot page).
+
 Button enum (order fixed, used in the event and the raw-state bitmask):
 GREY, YELLOW, GREEN, BLUE, RED, NAV_CENTER, NAV_UP, NAV_DOWN, NAV_LEFT,
 NAV_RIGHT, HOME, OK, CANCEL, PAGE.

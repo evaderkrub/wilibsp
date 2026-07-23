@@ -17,7 +17,10 @@ backspace (above). Button state arrives from the FW2 UART keyboard
 - `input/uartkbd_parse.{h,c}` — pure frame parser + press/release edge
   detection (host-tested by `tests/test_uartkbd_parse.c`). Protocol per
   `FreeWilli/vibe/Wilikeyboard.md`: sync 0xBD 0x1D, buttons in bytes 2-5,
-  additive 8-bit checksum of bytes 0-21 in byte 22.
+  additive 8-bit checksum of bytes 0-21 in byte 22. The first checksum-valid
+  frame only primes the button baseline (the coprocessor's boot frames
+  carry garbage bits); press/release edges are emitted from the second
+  frame on.
 - `input/uartkbd.{h,c}` — UART1 binding @ 62500 8N1, GPIO38 (TX, claimed,
   never driven) / GPIO39 (RX), `GPIO_FUNC_UART_AUX` (the plain UART
   function on these pins is CTS/RTS). RX-only, polled.

@@ -47,6 +47,11 @@ typedef struct {
     uint8_t  frame[UARTKBD_FRAME_LEN];
     uint16_t buttons;                      /* bit N = uartkbd_btn_t N, 1 = down */
     uint8_t  flags;                        /* UARTKBD_FLAG_* */
+    bool     primed;                       /* first valid frame only latches
+                                             * the baseline (coprocessor boot
+                                             * frames carry garbage bits);
+                                             * edges start from the second
+                                             * frame. */
     uartkbd_event_t ring[UARTKBD_EVENT_RING];
     uint8_t  ring_head, ring_count;
     uint32_t frames;                       /* checksum-valid frames */

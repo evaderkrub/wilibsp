@@ -58,6 +58,11 @@ static void accept_frame(uartkbd_parser_t *p)
     p->frames++;
     p->flags = decode_flags(p->frame);
     uint16_t nb = decode_buttons(p->frame);
+    if (!p->primed) {
+        p->primed = true;
+        p->buttons = nb;
+        return;
+    }
     uint16_t changed = (uint16_t)(nb ^ p->buttons);
     for (int i = 0; i < UARTKBD_BTN_COUNT; i++)
         if (changed & (1u << i))
