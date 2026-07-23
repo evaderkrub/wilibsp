@@ -4,7 +4,11 @@ Sends chat messages as AFSK (Bell 202 tones: 1200 Hz mark / 2200 Hz space, at
 300 baud) from the speaker; every Free-Wili 2 in earshot decodes them on its
 PDM mics and shows them in a touch chat UI. Broadcast party line: no pairing,
 fire-and-forget + CRC-16 (bad frames dropped, `E` counter in the status bar
-ticks).
+ticks). It sounds exactly like you hope it does.
+
+![RetroChat running in acoustic self-test: the typed message "hi" was sent
+through the speaker and decoded back through the mic (left bubble). Canned
+messages above the always-on chord-keyboard bar.](docs/screenshot.jpg)
 
 ## Use
 
