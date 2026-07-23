@@ -236,3 +236,13 @@ target_include_directories(test_uartkbd_parse PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(test_uartkbd_parse m)
 add_test(NAME uartkbd_parse COMMAND test_uartkbd_parse)
+
+add_executable(test_rc_compose
+    test_rc_compose.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../apps/retrochat/compose.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp/keyboard/fw2kb.c)
+target_include_directories(test_rc_compose PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../apps/retrochat
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME rc_compose COMMAND test_rc_compose)

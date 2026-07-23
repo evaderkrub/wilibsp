@@ -3,6 +3,7 @@ add_executable(retrochat
     audio_glue.c
     protocol.c
     ui.c
+    compose.c
     modem/crc16.c
     modem/frame.c
     modem/msgq.c
