@@ -119,9 +119,9 @@ static void draw_screen(const snap_t *s)
         float tc = uartkbd_charger_temp_c(c->temp_tspct);
         if (tc > -100.0f) {
             int t10 = (int)(tc * 10.0f + (tc >= 0.0f ? 0.5f : -0.5f));
-            snprintf(ln, sizeof ln, "TEMP  %u.%u%%  %d.%d C",
+            snprintf(ln, sizeof ln, "TEMP  %u.%u%%  %s%d.%d C",
                      c->temp_tspct / 10, c->temp_tspct % 10,
-                     t10 / 10, abs(t10 % 10));
+                     t10 < 0 ? "-" : "", abs(t10) / 10, abs(t10) % 10);
         } else {
             snprintf(ln, sizeof ln, "TEMP  %u.%u%%  --- C",
                      c->temp_tspct / 10, c->temp_tspct % 10);
