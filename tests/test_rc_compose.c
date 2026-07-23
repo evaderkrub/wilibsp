@@ -35,7 +35,7 @@ int main(void) {
     ASSERT_TRUE(press(UARTKBD_BTN_NAV_LEFT) == COMPOSE_CHANGED);
     ASSERT_TRUE(strcmp(compose_draft(&c), "hi ") == 0);
 
-    // Touch: above threshold 120 = backspace, below = space.
+    // Touch: y > threshold 120 = space, y <= threshold = backspace.
     ASSERT_TRUE(compose_touch(&c, 240, 40) == COMPOSE_CHANGED);   // backspace
     ASSERT_TRUE(strcmp(compose_draft(&c), "hi") == 0);
     ASSERT_TRUE(compose_touch(&c, 240, 200) == COMPOSE_CHANGED);  // space
@@ -56,6 +56,7 @@ int main(void) {
     ASSERT_TRUE(press(UARTKBD_BTN_PAGE) == COMPOSE_CHANGED);
     ASSERT_TRUE(compose_active(&c));
     ASSERT_TRUE(compose_draft(&c)[0] == '\0');
+    ASSERT_TRUE(press(UARTKBD_BTN_NAV_CENTER) == COMPOSE_NONE);   // active but empty: no send
 
     // CANCEL discards and exits.
     press(UARTKBD_BTN_GREY); press(UARTKBD_BTN_YELLOW);           // 'b'

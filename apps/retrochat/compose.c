@@ -1,7 +1,7 @@
 #include "compose.h"
 #include <string.h>
 
-// Touch split: y above this = backspace, below = space. Mid chat area
+// Touch split: y > this = space, y <= this = backspace. Mid chat area
 // (status bar 24 + chat 192 -> grid at 216; split at 120).
 #define COMPOSE_TOUCH_SPLIT 120
 
