@@ -8,6 +8,7 @@ extern const char *const proto_canned[PROTO_NUM_CANNED];
 
 void    proto_init(void);
 uint8_t proto_self_id(void);
+void    proto_send_text(const char *text);   // arbitrary payload; resendable
 void    proto_send_canned(int idx);
 void    proto_resend(void);
 
