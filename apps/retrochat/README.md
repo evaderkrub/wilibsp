@@ -15,13 +15,14 @@ ticks).
   the demodulator stays live during TX, so tapping any canned button makes the
   device decode its own transmission through the air — a one-device
   end-to-end check. Long-press again to exit.
-- **Typing:** the physical chord keyboard replaces the canned grid with a
-  compose bar. Each character is a two-press chord: the first color button
-  picks a group, the second picks the character within it; `PAGE` cycles
-  pages or cancels a half-chord. `NAV_CENTER` sends the draft, `NAV_LEFT`
-  backspaces, `NAV_RIGHT` inserts a space. While composing, touch takes over
-  from the canned grid: touching the lower half of the screen types a space,
-  the upper half backspaces. `CANCEL` discards the draft and restores the
+- **Typing:** the chord-keyboard label bar is always visible at the bottom
+  of the screen. Each character is a two-press chord on the five color
+  buttons: the first press picks a group (shown in the bar), the second
+  picks the character within it; `PAGE` cycles pages or cancels a
+  half-chord. While composing, the canned grid is replaced by the draft
+  line. `NAV_CENTER` sends the draft, `NAV_LEFT` backspaces, `NAV_RIGHT`
+  inserts a space; touch also works (lower half of the screen = space,
+  upper half = backspace). `CANCEL` discards the draft and restores the
   canned grid.
 
 ## Test sequence

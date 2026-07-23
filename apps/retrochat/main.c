@@ -37,6 +37,11 @@ int main(void) {
     uartkbd_init();
     static compose_t s_compose;      // static: keeps main()'s stack tiny
     compose_init(&s_compose);
+    {   // the chord label bar is always visible; draw its initial state
+        const char *labels[5];
+        compose_labels(&s_compose, labels);
+        ui_kb_bar(labels);
+    }
     DIAG("rc: up, id=%02X\n", proto_self_id());
 
     bool last_busy = false;
@@ -87,9 +92,15 @@ int main(void) {
             ui_add_message(proto_self_id(), compose_draft(&s_compose), true);
             compose_clear(&s_compose);
             ui_compose_hide();
+            const char *labels[5];   // bar stays: refresh reset labels
+            compose_labels(&s_compose, labels);
+            ui_kb_bar(labels);
             DIAG("rc: kbd send\n");
         } else if (cr == COMPOSE_CANCELLED) {
             ui_compose_hide();
+            const char *labels[5];
+            compose_labels(&s_compose, labels);
+            ui_kb_bar(labels);
         } else if (cr == COMPOSE_CHANGED) {
             const char *labels[5];
             compose_labels(&s_compose, labels);

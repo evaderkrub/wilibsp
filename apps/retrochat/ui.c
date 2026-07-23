@@ -15,8 +15,12 @@
 #define GRID_Y     (CHAT_Y + CHAT_H)
 #define GRID_COLS  3
 #define GRID_ROWS  3
+// The chord-keyboard label bar is ALWAYS visible at the bottom; the canned
+// grid occupies the space between the chat log and the bar.
+#define KB_BAR_H   (CELL_H + 6)                   // 22
+#define KB_BAR_Y   (ST7796_H - KB_BAR_H)          // 298
 #define BTN_W      (ST7796_W / GRID_COLS)         // 160
-#define BTN_H      ((ST7796_H - GRID_Y) / GRID_ROWS) // 34
+#define BTN_H      ((KB_BAR_Y - GRID_Y) / GRID_ROWS) // 27
 #define LINE_CHARS 40
 #define TAG_CHARS  3                              // "A7 "
 
@@ -102,7 +106,7 @@ void ui_set_stats(unsigned crc_err, int peak) {
 static void grid_draw(void) {
     for (int i = 0; i < 9; i++) {
         int cx = (i % GRID_COLS) * BTN_W, cy = GRID_Y + (i / GRID_COLS) * BTN_H;
-        int ch = (i / GRID_COLS == GRID_ROWS - 1) ? (ST7796_H - cy) : BTN_H;
+        int ch = (i / GRID_COLS == GRID_ROWS - 1) ? (KB_BAR_Y - cy) : BTN_H;
         st7796_fill_rect(cx + 1, cy + 1, BTN_W - 2, ch - 2, COL_BTN);
         const char *lbl = (i < PROTO_NUM_CANNED) ? proto_canned[i] : "RESEND";
         int len = (int)strlen(lbl);
@@ -120,26 +124,13 @@ static void grid_draw(void) {
 
 #define KB_BTN_W    ((ST7796_W - 12) / 5)   // 93, matches firmware menu
 #define KB_BTN_P    (KB_BTN_W + 3)          // 96 pitch
-#define KB_BAR_H    (CELL_H + 6)            // 22
-#define KB_BAR_Y    (ST7796_H - KB_BAR_H)
 #define DRAFT_Y     GRID_Y
 #define DRAFT_H     (KB_BAR_Y - GRID_Y)     // draft strip between grid top and bar
 
-void ui_compose_show(const char *draft, const char *labels[5]) {
+// Always-visible chord label bar at the bottom of the screen.
+void ui_kb_bar(const char *labels[5]) {
     static const uint16_t cols[5] =
         { COL_KB_GRAY, COL_KB_YELLOW, COL_KB_GREEN, COL_KB_BLUE, COL_KB_RED };
-    // Draft strip: show the tail that fits; underline cursor cell.
-    st7796_fill_rect(0, DRAFT_Y, ST7796_W, DRAFT_H, COL_BG);
-    unsigned len = strlen(draft);
-    unsigned max = LINE_CHARS - 1;                     // leave the cursor cell
-    const char *tail = (len > max) ? draft + (len - max) : draft;
-    st7796_draw_text(0, DRAFT_Y + (DRAFT_H - CELL_H) / 2, SCALE,
-                     COL_OWN, COL_BG, tail);
-    unsigned tl = strlen(tail);
-    st7796_fill_rect((int)tl * CELL_W,
-                     DRAFT_Y + (DRAFT_H - CELL_H) / 2 + CELL_H - 2,
-                     CELL_W, 2, COL_OWN);
-    // Label bar.
     st7796_fill_rect(0, KB_BAR_Y, ST7796_W, KB_BAR_H, rgb565_be(0, 0, 0));
     for (int i = 0; i < 5; i++) {
         int x = i * KB_BTN_P;
@@ -152,9 +143,24 @@ void ui_compose_show(const char *draft, const char *labels[5]) {
     }
 }
 
+void ui_compose_show(const char *draft, const char *labels[5]) {
+    // Draft strip (replaces the canned grid): tail that fits + cursor cell.
+    st7796_fill_rect(0, DRAFT_Y, ST7796_W, DRAFT_H, COL_BG);
+    unsigned len = strlen(draft);
+    unsigned max = LINE_CHARS - 1;                     // leave the cursor cell
+    const char *tail = (len > max) ? draft + (len - max) : draft;
+    st7796_draw_text(0, DRAFT_Y + (DRAFT_H - CELL_H) / 2, SCALE,
+                     COL_OWN, COL_BG, tail);
+    unsigned tl = strlen(tail);
+    st7796_fill_rect((int)tl * CELL_W,
+                     DRAFT_Y + (DRAFT_H - CELL_H) / 2 + CELL_H - 2,
+                     CELL_W, 2, COL_OWN);
+    ui_kb_bar(labels);
+}
+
 void ui_compose_hide(void) {
-    st7796_fill_rect(0, GRID_Y, ST7796_W, ST7796_H - GRID_Y, COL_BG);
-    grid_draw();
+    st7796_fill_rect(0, GRID_Y, ST7796_W, KB_BAR_Y - GRID_Y, COL_BG);
+    grid_draw();      // the label bar below stays; caller refreshes it
 }
 
 void ui_init(uint8_t self_id) {
@@ -194,7 +200,7 @@ ui_action_t ui_poll(void) {
     if (!down && s_was_down) {         // release
         s_was_down = false;
         if (s_swallow) return UI_NONE;
-        if (down_y >= GRID_Y) {
+        if (down_y >= GRID_Y && down_y < KB_BAR_Y) {   // bar is display-only
             int row = (down_y - GRID_Y) / BTN_H;
             if (row >= GRID_ROWS) row = GRID_ROWS - 1;
             int cell = row * GRID_COLS + down_x / BTN_W;

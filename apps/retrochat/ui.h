@@ -20,7 +20,10 @@ ui_action_t ui_poll(void);
 // touch, so a stale release doesn't fire a canned send on return to the grid).
 void ui_poll_reset(void);
 
-// Compose bar: replaces the canned grid while typing on the chord keyboard.
+// Chord-keyboard label bar: always visible at the bottom of the screen.
+void ui_kb_bar(const char *labels[5]);
+// Compose: replaces the canned grid with the draft line while typing (the
+// label bar below stays; refresh it via ui_kb_bar after hide).
 void ui_compose_show(const char *draft, const char *labels[5]);
 void ui_compose_hide(void);
 
