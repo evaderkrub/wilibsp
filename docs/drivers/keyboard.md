@@ -56,6 +56,27 @@ backspace (above). Button state arrives from the FW2 UART keyboard
 touch zones). Link health: `uartkbd_frames()` / `uartkbd_errors()` — a
 healthy link shows frames climbing and errors static.
 
+**Charger telemetry:** the same status frame carries charger data in bytes
+10-21. The parser captures the raw bytes on every checksum-valid frame
+(readable from the first frame — no priming wait); scaling to engineering
+units runs only when you ask:
+
+    uartkbd_charger_t chg;
+    if (uartkbd_charger(&chg)) {
+        /* chg.vbus_mv / vsys_mv / vbatt_mv / current_ma / temp_tspct
+           (tenths of %), chg.charge_status (UARTKBD_CHG_*), chg.vbus_status
+           (UARTKBD_VBUS_*), chg.fault (UARTKBD_FAULT_*), chg.temp_rank
+           (UARTKBD_RANK_*), chg.cc_tier (UARTKBD_CC_*),
+           chg.vsys_regulation / thermal_regulation / vbus_attached,
+           chg.cc1_mv / cc2_mv */
+    }
+    float c = uartkbd_charger_temp_c(chg.temp_tspct);  /* NTC math; links libm;
+                                                          <= -100 = no reading */
+
+Returns false until the first valid frame. Enum-coded fields carry the
+frame's raw code verbatim, so undocumented codes pass through unclamped.
+`apps/hello_charger` is the worked example (live full-frame view).
+
 **Display note:** `font5x7`/`st7796_draw_text` cover full printable ASCII
 0x20-0x7E (lowercase included) as of the fw2kb work — the earlier
 uppercase-folding caveat no longer applies. The RTT `fw2kb char` log remains

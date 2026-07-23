@@ -67,5 +67,6 @@ void uartkbd_task(void)
 bool     uartkbd_next_event(uartkbd_event_t *ev) { return uartkbd_parse_next_event(&s_parser, ev); }
 uint16_t uartkbd_buttons(void) { return uartkbd_parse_buttons(&s_parser); }
 uint8_t  uartkbd_flags(void)   { return uartkbd_parse_flags(&s_parser); }
+bool     uartkbd_charger(uartkbd_charger_t *out) { return uartkbd_parse_charger(&s_parser, out); }
 uint32_t uartkbd_frames(void)  { return uartkbd_parse_frames(&s_parser); }
 uint32_t uartkbd_errors(void)  { return uartkbd_parse_errors(&s_parser); }

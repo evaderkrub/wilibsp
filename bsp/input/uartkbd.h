@@ -13,6 +13,7 @@ void     uartkbd_task(void);
 bool     uartkbd_next_event(uartkbd_event_t *ev);
 uint16_t uartkbd_buttons(void);
 uint8_t  uartkbd_flags(void);
+bool     uartkbd_charger(uartkbd_charger_t *out);
 uint32_t uartkbd_frames(void);
 uint32_t uartkbd_errors(void);
 
