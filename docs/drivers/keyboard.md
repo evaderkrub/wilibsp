@@ -21,6 +21,10 @@ backspace (above). Button state arrives from the FW2 UART keyboard
 - `input/uartkbd.{h,c}` — UART1 binding @ 62500 8N1, GPIO38 (TX, claimed,
   never driven) / GPIO39 (RX), `GPIO_FUNC_UART_AUX` (the plain UART
   function on these pins is CTS/RTS). RX-only, polled.
+  RX bytes are drained by a dedicated DMA channel (endless mode, no IRQ)
+  into a 1 KB SRAM ring; `uartkbd_task()` reads behind the DMA write
+  pointer, so keyboard input survives CPU stalls up to ~164 ms (e.g. long
+  blocking renders) without losing frames.
 
 **How to use:**
 

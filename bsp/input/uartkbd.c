@@ -1,6 +1,7 @@
 #include "uartkbd.h"
 #include "hardware/uart.h"
 #include "hardware/gpio.h"
+#include "hardware/dma.h"
 
 /* On GPIO38/39 the plain UART function is UART1 CTS/RTS; the UART-AUX
  * function routes UART1 TX/RX here instead (RP2350 datasheet GPIO muxing). */
@@ -9,23 +10,58 @@
 #define UARTKBD_RX_PIN 39
 #define UARTKBD_BAUD   62500
 
+/* DMA drains the UART RX FIFO into this ring continuously (endless mode,
+ * no IRQ), so keyboard bytes survive arbitrarily long CPU stalls up to one
+ * full ring (~164 ms of line traffic at 62500 baud). uartkbd_task() reads
+ * strictly behind the DMA write pointer. Alignment is required for the
+ * DMA write-address ring wrap. */
+#define RING_BITS 10
+#define RING_SIZE (1u << RING_BITS)
+static uint8_t __attribute__((aligned(RING_SIZE))) s_ring[RING_SIZE];
+static uint32_t s_rd;          /* software read index into s_ring */
+static int      s_dma_chan = -1;
+
 static uartkbd_parser_t s_parser;
 
 void uartkbd_init(void)
 {
     uartkbd_parse_init(&s_parser);
+    s_rd = 0;
+
     uart_init(UARTKBD_UART, UARTKBD_BAUD);
     gpio_set_function(UARTKBD_TX_PIN, GPIO_FUNC_UART_AUX);
     gpio_set_function(UARTKBD_RX_PIN, GPIO_FUNC_UART_AUX);
     uart_set_format(UARTKBD_UART, 8, 1, UART_PARITY_NONE);
     uart_set_hw_flow(UARTKBD_UART, false, false);
     uart_set_fifo_enabled(UARTKBD_UART, true);
+
+    s_dma_chan = dma_claim_unused_channel(true);
+    dma_channel_config c = dma_channel_get_default_config(s_dma_chan);
+    channel_config_set_transfer_data_size(&c, DMA_SIZE_8);
+    channel_config_set_read_increment(&c, false);
+    channel_config_set_write_increment(&c, true);
+    channel_config_set_ring(&c, true, RING_BITS);      /* wrap write addr */
+    channel_config_set_dreq(&c, DREQ_UART1_RX);
+    dma_channel_configure(s_dma_chan, &c,
+                          s_ring,                        /* write */
+                          &uart_get_hw(UARTKBD_UART)->dr,/* read  */
+                          0, false);                     /* count set below */
+    /* Endless mode: TRANS_COUNT.MODE = 0xF -> count never decrements, the
+     * channel runs forever. Writing the trigger alias starts it. */
+    dma_channel_hw_addr(s_dma_chan)->al1_transfer_count_trig =
+        ((uint32_t)DMA_CH0_TRANS_COUNT_MODE_VALUE_ENDLESS
+             << DMA_CH0_TRANS_COUNT_MODE_LSB) | 1u;
 }
 
 void uartkbd_task(void)
 {
-    while (uart_is_readable(UARTKBD_UART))
-        uartkbd_parse_byte(&s_parser, (uint8_t)uart_getc(UARTKBD_UART));
+    if (s_dma_chan < 0) return;
+    uint32_t wr = (uint32_t)(dma_channel_hw_addr(s_dma_chan)->write_addr
+                             - (uintptr_t)s_ring) & (RING_SIZE - 1);
+    while (s_rd != wr) {
+        uartkbd_parse_byte(&s_parser, s_ring[s_rd]);
+        s_rd = (s_rd + 1) & (RING_SIZE - 1);
+    }
 }
 
 bool     uartkbd_next_event(uartkbd_event_t *ev) { return uartkbd_parse_next_event(&s_parser, ev); }
