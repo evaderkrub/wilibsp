@@ -7,6 +7,8 @@
 #include "fw2.h"
 #include "platform/diag.h"
 #include "pico/stdlib.h"
+#include "display/font5x7.h"
+#include "platform/psram.h"
 
 /* RGB565 colors, byte-swapped to wire (big-endian) order per st7796.h.
  * Button colors match the FW2 firmware soft menu exactly
@@ -44,22 +46,64 @@ static bool    s_text_dirty = true;
 static bool    s_bar_dirty  = true;
 static char    s_bar_cache[5][6];  /* 5 = fw2kb group width (labels are at most 5 chars) */
 
+/* Off-screen framebuffer in PSRAM (AGENTS.md: large buffers live in PSRAM).
+ * Rendered by fb_* helpers; flushed whole-screen by DMA (st7796_flush_async)
+ * so the main loop never blocks on SPI. Wire-order RGB565, row-major 480x320. */
+static uint16_t *const s_fb = (uint16_t *)PSRAM_BASE;
+static bool s_fb_dirty = false;
+
 static const uint16_t k_btn_cols[5] =
     { COL_GRAY, COL_YELLOW, COL_GREEN, COL_BLUE, COL_RED };
+
+static void fb_fill_rect(int x, int y, int w, int h, uint16_t color_be)
+{
+    if (x < 0) { w += x; x = 0; }
+    if (y < 0) { h += y; y = 0; }
+    if (x + w > ST7796_W) w = ST7796_W - x;
+    if (y + h > ST7796_H) h = ST7796_H - y;
+    for (int yy = y; yy < y + h; yy++) {
+        uint16_t *row = s_fb + (size_t)yy * ST7796_W + x;
+        for (int xx = 0; xx < w; xx++) row[xx] = color_be;
+    }
+}
+
+static void fb_draw_text(int x, int y, int scale, uint16_t fg_be, uint16_t bg_be,
+                         const char *s)
+{
+    if (scale < 1) scale = 1;
+    if (scale > 4) scale = 4;
+    const int w = 6 * scale, h = 8 * scale;
+    for (; *s; s++, x += w) {
+        if (x + w > ST7796_W || y + h > ST7796_H || x < 0 || y < 0) break;
+        char c = *s;
+        const uint8_t *cols = (c >= FONT5X7_FIRST && c <= FONT5X7_LAST)
+                                  ? font5x7[c - FONT5X7_FIRST]
+                                  : font5x7[0];
+        for (int gy = 0; gy < h; gy++) {
+            int grow = gy / scale;                /* 0..7; row 7 = line gap */
+            uint16_t *row = s_fb + (size_t)(y + gy) * ST7796_W + x;
+            for (int gx = 0; gx < w; gx++) {
+                int col = gx / scale;             /* 0..5; col 5 = char gap */
+                bool on = col < 5 && grow < 7 && ((cols[col] >> grow) & 1);
+                row[gx] = on ? fg_be : bg_be;
+            }
+        }
+    }
+}
 
 static void draw_bar(void)
 {
     const char *labels[5];
     fw2kb_get_labels(&s_kb, labels);
-    st7796_fill_rect(0, BAR_Y, ST7796_W, BAR_H, COL_BLACK);  /* clear the 3 px gaps */
+    fb_fill_rect(0, BAR_Y, ST7796_W, BAR_H, COL_BLACK);  /* clear the 3 px gaps */
     for (int i = 0; i < 5; i++) {
         int x = i * BTN_PITCH;
-        st7796_fill_rect(x, BAR_Y, BTN_W, BAR_H, k_btn_cols[i]);
+        fb_fill_rect(x, BAR_Y, BTN_W, BAR_H, k_btn_cols[i]);
         int len = (int)strlen(labels[i]);
         if (len > 5) len = 5;
         int tx = x + (BTN_W - len * CHAR_W) / 2;
-        st7796_draw_text(tx, BAR_Y + (BAR_H - LINE_H) / 2, TEXT_SCALE,
-                         COL_WHITE, k_btn_cols[i], labels[i]);
+        fb_draw_text(tx, BAR_Y + (BAR_H - LINE_H) / 2, TEXT_SCALE,
+                     COL_WHITE, k_btn_cols[i], labels[i]);
         strncpy(s_bar_cache[i], labels[i], 5);
         s_bar_cache[i][5] = 0;
     }
@@ -76,10 +120,10 @@ static bool bar_changed(void)
 
 static void draw_text_area(void)
 {
-    st7796_fill_rect(0, 0, ST7796_W, BAR_Y, COL_BLACK);
-    st7796_fill_rect(0, TOUCH_SPLIT, ST7796_W, 1, COL_DIM);
-    st7796_draw_text(4, TOUCH_SPLIT - 10, 1, COL_DIM, COL_BLACK, "tap above = backspace");
-    st7796_draw_text(4, TOUCH_SPLIT + 3,  1, COL_DIM, COL_BLACK, "tap below = space");
+    fb_fill_rect(0, 0, ST7796_W, BAR_Y, COL_BLACK);
+    fb_fill_rect(0, TOUCH_SPLIT, ST7796_W, 1, COL_DIM);
+    fb_draw_text(4, TOUCH_SPLIT - 10, 1, COL_DIM, COL_BLACK, "tap above = backspace");
+    fb_draw_text(4, TOUCH_SPLIT + 3,  1, COL_DIM, COL_BLACK, "tap below = space");
 
     int col = 0, row = 0;
     for (int i = 0; i < s_len && row < TEXT_ROWS; i++) {
@@ -88,13 +132,13 @@ static void draw_text_area(void)
         if (col >= TEXT_COLS) { row++; col = 0; }
         if (row >= TEXT_ROWS) break;
         char s[2] = { c, 0 };
-        st7796_draw_text(col * CHAR_W, row * LINE_H, TEXT_SCALE,
-                         COL_WHITE, COL_BLACK, s);
+        fb_draw_text(col * CHAR_W, row * LINE_H, TEXT_SCALE,
+                     COL_WHITE, COL_BLACK, s);
         col++;
     }
     if (row < TEXT_ROWS)   /* cursor underline at the next cell */
-        st7796_fill_rect(col * CHAR_W, row * LINE_H + LINE_H - 2,
-                         CHAR_W, 2, COL_WHITE);
+        fb_fill_rect(col * CHAR_W, row * LINE_H + LINE_H - 2,
+                     CHAR_W, 2, COL_WHITE);
 }
 
 static void append_char(char c)
@@ -145,6 +189,12 @@ static void handle_fw2kb_events(void)
 int main(void)
 {
     board_init();
+    size_t psram_bytes = psram_init();
+    if (psram_bytes < (size_t)ST7796_W * ST7796_H * 2) {
+        DIAG("hello_keyboard: PSRAM absent/too small (%u bytes) - halting\n",
+             (unsigned)psram_bytes);
+        for (;;) tight_loop_contents();
+    }
     st7796_init();
     board_backlight_set(1);
     ft6336_init();
@@ -161,8 +211,12 @@ int main(void)
         handle_fw2kb_events();
 
         if (bar_changed()) s_bar_dirty = true;
-        if (s_text_dirty) { draw_text_area(); s_text_dirty = false; }
-        if (s_bar_dirty)  { draw_bar();       s_bar_dirty  = false; }
+        if (s_text_dirty) { draw_text_area(); s_text_dirty = false; s_fb_dirty = true; }
+        if (s_bar_dirty)  { draw_bar();       s_bar_dirty  = false; s_fb_dirty = true; }
+        if (s_fb_dirty && !st7796_flush_busy()) {
+            s_fb_dirty = false;   /* changes landing mid-flush re-dirty and coalesce */
+            st7796_flush_async(0, 0, ST7796_W - 1, ST7796_H - 1, s_fb, NULL);
+        }
 
         uint64_t now = time_us_64();
         if (now >= next_link_log) {
