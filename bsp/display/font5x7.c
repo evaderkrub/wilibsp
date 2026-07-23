@@ -1,4 +1,4 @@
-// src/display/font5x7.c — classic 5x7 font, chars 0x20 (space) .. 0x5F (_).
+// src/display/font5x7.c — classic 5x7 font, chars 0x20 (space) .. 0x7E (~).
 #include "display/font5x7.h"
 
 const uint8_t font5x7[FONT5X7_LAST - FONT5X7_FIRST + 1][5] = {
