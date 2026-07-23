@@ -111,6 +111,52 @@ static void grid_draw(void) {
     }
 }
 
+// FW2 soft-menu button colors (wire order), per apps/hello_keyboard/main.c.
+#define COL_KB_GRAY   0x9AD6
+#define COL_KB_YELLOW 0x06FF
+#define COL_KB_GREEN  0x0012
+#define COL_KB_BLUE   0xF800
+#define COL_KB_RED    0x0780
+
+#define KB_BTN_W    ((ST7796_W - 12) / 5)   // 93, matches firmware menu
+#define KB_BTN_P    (KB_BTN_W + 3)          // 96 pitch
+#define KB_BAR_H    (CELL_H + 6)            // 22
+#define KB_BAR_Y    (ST7796_H - KB_BAR_H)
+#define DRAFT_Y     GRID_Y
+#define DRAFT_H     (KB_BAR_Y - GRID_Y)     // draft strip between grid top and bar
+
+void ui_compose_show(const char *draft, const char *labels[5]) {
+    static const uint16_t cols[5] =
+        { COL_KB_GRAY, COL_KB_YELLOW, COL_KB_GREEN, COL_KB_BLUE, COL_KB_RED };
+    // Draft strip: show the tail that fits; underline cursor cell.
+    st7796_fill_rect(0, DRAFT_Y, ST7796_W, DRAFT_H, COL_BG);
+    unsigned len = strlen(draft);
+    unsigned max = LINE_CHARS - 1;                     // leave the cursor cell
+    const char *tail = (len > max) ? draft + (len - max) : draft;
+    st7796_draw_text(0, DRAFT_Y + (DRAFT_H - CELL_H) / 2, SCALE,
+                     COL_OWN, COL_BG, tail);
+    unsigned tl = strlen(tail);
+    st7796_fill_rect((int)tl * CELL_W,
+                     DRAFT_Y + (DRAFT_H - CELL_H) / 2 + CELL_H - 2,
+                     CELL_W, 2, COL_OWN);
+    // Label bar.
+    st7796_fill_rect(0, KB_BAR_Y, ST7796_W, KB_BAR_H, rgb565_be(0, 0, 0));
+    for (int i = 0; i < 5; i++) {
+        int x = i * KB_BTN_P;
+        st7796_fill_rect(x, KB_BAR_Y, KB_BTN_W, KB_BAR_H, cols[i]);
+        int l = (int)strlen(labels[i]);
+        if (l > 5) l = 5;
+        st7796_draw_text(x + (KB_BTN_W - l * CELL_W) / 2,
+                         KB_BAR_Y + (KB_BAR_H - CELL_H) / 2, SCALE,
+                         COL_BTN_TXT, cols[i], labels[i]);
+    }
+}
+
+void ui_compose_hide(void) {
+    st7796_fill_rect(0, GRID_Y, ST7796_W, ST7796_H - GRID_Y, COL_BG);
+    grid_draw();
+}
+
 void ui_init(uint8_t self_id) {
     s_self = self_id;
     s_nlines = 0;

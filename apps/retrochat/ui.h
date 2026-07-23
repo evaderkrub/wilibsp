@@ -17,4 +17,8 @@ void ui_set_status(bool txing, bool selftest);
 void ui_set_stats(unsigned crc_err, int peak);
 ui_action_t ui_poll(void);
 
+// Compose bar: replaces the canned grid while typing on the chord keyboard.
+void ui_compose_show(const char *draft, const char *labels[5]);
+void ui_compose_hide(void);
+
 #endif
