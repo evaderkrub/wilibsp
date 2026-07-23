@@ -216,3 +216,23 @@ add_executable(test_rc_afsk_loopback test_rc_afsk_loopback.c
 target_include_directories(test_rc_afsk_loopback PRIVATE ${RCMODEM} ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(test_rc_afsk_loopback m)
 add_test(NAME rc_afsk_loopback COMMAND test_rc_afsk_loopback)
+
+# --- bsp/keyboard fw2kb chord engine (harvested from ../wilikeyboard) ---
+set(BSPKBD ${CMAKE_CURRENT_SOURCE_DIR}/../bsp/keyboard)
+add_executable(test_fw2kb test_fw2kb.c ${BSPKBD}/fw2kb.c)
+target_include_directories(test_fw2kb PRIVATE ${BSPKBD} ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME fw2kb COMMAND test_fw2kb)
+
+add_executable(test_fw2kb_hid test_fw2kb_hid.c ${BSPKBD}/fw2kb.c ${BSPKBD}/fw2kb_hidmap.c)
+target_include_directories(test_fw2kb_hid PRIVATE ${BSPKBD} ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME fw2kb_hid COMMAND test_fw2kb_hid)
+
+# --- bsp/input uartkbd_parse pure-logic parser (no UART hardware) ---
+add_executable(test_uartkbd_parse
+    test_uartkbd_parse.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp/input/uartkbd_parse.c)
+target_include_directories(test_uartkbd_parse PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bsp/input
+    ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(test_uartkbd_parse m)
+add_test(NAME uartkbd_parse COMMAND test_uartkbd_parse)

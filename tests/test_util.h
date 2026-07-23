@@ -19,4 +19,13 @@ static int g_failures = 0;
                __FILE__, __LINE__, #actual, _a, _e, (double)(eps)); } \
 } while (0)
 #define TEST_RETURN() return g_failures ? 1 : 0
+/* --- compat for tests harvested from the wilikeyboard repo --- */
+#define g_test_failures g_failures
+#define CHECK(cond) do { \
+    if (!(cond)) { \
+        printf("FAIL %s:%d: %s\n", __FILE__, __LINE__, #cond); \
+        g_failures++; \
+    } \
+} while (0)
+static inline int test_failures(void) { return g_failures; }
 #endif
