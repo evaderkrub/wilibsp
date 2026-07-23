@@ -17,24 +17,26 @@ static void push_event(uartkbd_parser_t *p, uartkbd_btn_t btn, bool pressed)
 }
 
 /* Bytes 2-5 -> 14-bit button state (bit = uartkbd_btn_t). Reserved bits
- * are never read. Mapping per Wilikeyboard.md. */
+ * are never read. Mapping per Wilikeyboard.md. The wire is active-low
+ * (hardware-verified 2026-07-23: idle lines read 1, a held button reads 0);
+ * the returned bitmap uses bit set = pressed. */
 static uint16_t decode_buttons(const uint8_t *f)
 {
     uint16_t b = 0;
-    if (f[2] & 0x01) b |= 1u << UARTKBD_BTN_GREY;
-    if (f[2] & 0x02) b |= 1u << UARTKBD_BTN_YELLOW;
-    if (f[2] & 0x04) b |= 1u << UARTKBD_BTN_GREEN;
-    if (f[2] & 0x08) b |= 1u << UARTKBD_BTN_BLUE;
-    if (f[2] & 0x10) b |= 1u << UARTKBD_BTN_RED;
-    if (f[2] & 0x20) b |= 1u << UARTKBD_BTN_NAV_CENTER;
-    if (f[3] & 0x01) b |= 1u << UARTKBD_BTN_NAV_DOWN;
-    if (f[3] & 0x08) b |= 1u << UARTKBD_BTN_NAV_RIGHT;
-    if (f[3] & 0x10) b |= 1u << UARTKBD_BTN_NAV_UP;
-    if (f[3] & 0x20) b |= 1u << UARTKBD_BTN_NAV_LEFT;
-    if (f[4] & 0x80) b |= 1u << UARTKBD_BTN_HOME;
-    if (f[5] & 0x01) b |= 1u << UARTKBD_BTN_OK;
-    if (f[5] & 0x02) b |= 1u << UARTKBD_BTN_CANCEL;
-    if (f[5] & 0x04) b |= 1u << UARTKBD_BTN_PAGE;
+    if (!(f[2] & 0x01)) b |= 1u << UARTKBD_BTN_GREY;
+    if (!(f[2] & 0x02)) b |= 1u << UARTKBD_BTN_YELLOW;
+    if (!(f[2] & 0x04)) b |= 1u << UARTKBD_BTN_GREEN;
+    if (!(f[2] & 0x08)) b |= 1u << UARTKBD_BTN_BLUE;
+    if (!(f[2] & 0x10)) b |= 1u << UARTKBD_BTN_RED;
+    if (!(f[2] & 0x20)) b |= 1u << UARTKBD_BTN_NAV_CENTER;
+    if (!(f[3] & 0x01)) b |= 1u << UARTKBD_BTN_NAV_DOWN;
+    if (!(f[3] & 0x08)) b |= 1u << UARTKBD_BTN_NAV_RIGHT;
+    if (!(f[3] & 0x10)) b |= 1u << UARTKBD_BTN_NAV_UP;
+    if (!(f[3] & 0x20)) b |= 1u << UARTKBD_BTN_NAV_LEFT;
+    if (!(f[4] & 0x80)) b |= 1u << UARTKBD_BTN_HOME;
+    if (!(f[5] & 0x01)) b |= 1u << UARTKBD_BTN_OK;
+    if (!(f[5] & 0x02)) b |= 1u << UARTKBD_BTN_CANCEL;
+    if (!(f[5] & 0x04)) b |= 1u << UARTKBD_BTN_PAGE;
     return b;
 }
 

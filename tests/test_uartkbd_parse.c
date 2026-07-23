@@ -2,13 +2,23 @@
 #include "uartkbd_parse.h"
 #include "test_util.h"
 
-/* Build a valid 23-byte frame with the given payload bytes 2-5. */
+/* Button-bit positions per payload byte (bytes 2-5). The wire is
+ * active-low: a button's bit reads 1 when idle, 0 when held. */
+#define IDLE2 0x3Fu
+#define IDLE3 0x39u
+#define IDLE4 0x80u
+#define IDLE5 0x07u
+
+/* Build a valid 23-byte frame from PRESSED-button masks for bytes 2-5
+ * (same bit positions as the wire). XOR against the idle pattern clears
+ * pressed button bits and passes non-button bits through verbatim. */
 static void mk_frame(uint8_t f[UARTKBD_FRAME_LEN],
                      uint8_t b2, uint8_t b3, uint8_t b4, uint8_t b5)
 {
     memset(f, 0, UARTKBD_FRAME_LEN);
     f[0] = 0xBD; f[1] = 0x1D;
-    f[2] = b2; f[3] = b3; f[4] = b4; f[5] = b5;
+    f[2] = (uint8_t)(IDLE2 ^ b2); f[3] = (uint8_t)(IDLE3 ^ b3);
+    f[4] = (uint8_t)(IDLE4 ^ b4); f[5] = (uint8_t)(IDLE5 ^ b5);
     uint8_t sum = 0;
     for (int i = 0; i < UARTKBD_FRAME_LEN - 1; i++) sum = (uint8_t)(sum + f[i]);
     f[UARTKBD_FRAME_LEN - 1] = sum;
@@ -203,7 +213,7 @@ static void test_first_frame_primes_without_events(void)
     uartkbd_parser_t p;
     uartkbd_parse_init(&p);
     uint8_t f[UARTKBD_FRAME_LEN];
-    /* garbage boot frame: every button bit set (observed on hardware) */
+    /* garbage boot frame: every button reads pressed (all wire bits low) */
     mk_frame(f, 0x3F, 0x39, 0x80, 0x07);
     feed(&p, f, UARTKBD_FRAME_LEN);
     uartkbd_event_t ev;
@@ -222,6 +232,7 @@ static void mk_frame_chg(uint8_t f[UARTKBD_FRAME_LEN], const uint8_t chg[12])
 {
     memset(f, 0, UARTKBD_FRAME_LEN);
     f[0] = 0xBD; f[1] = 0x1D;
+    f[2] = IDLE2; f[3] = IDLE3; f[4] = IDLE4; f[5] = IDLE5;
     memcpy(&f[10], chg, 12);
     uint8_t sum = 0;
     for (int i = 0; i < UARTKBD_FRAME_LEN - 1; i++) sum = (uint8_t)(sum + f[i]);

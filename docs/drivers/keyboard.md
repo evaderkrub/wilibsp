@@ -82,11 +82,13 @@ frame's raw code verbatim, so undocumented codes pass through unclamped.
 uppercase-folding caveat no longer applies. The RTT `fw2kb char` log remains
 the authoritative record of generated characters.
 
-**Protocol assumptions to re-verify when the keyboard firmware lands**
-(the PIC-side firmware was being updated when this driver was written):
-checksum = additive 8-bit sum of bytes 0-21; button bits 1 = pressed;
-AUDIO/HOTPLUG/USB detect bits are level flags. All three live in
-`uartkbd_parse.c` only.
+**Protocol facts (hardware-verified 2026-07-23 against the final keyboard
+firmware):** checksum = additive 8-bit sum of bytes 0-21 (confirmed —
+hundreds of frames, 0 errors); button bits are **active-low** — a button's
+wire bit reads 1 idle, 0 while held (`decode_buttons` inverts, so the
+public bitmap/event API keeps bit set = pressed). Still unverified:
+AUDIO/HOTPLUG/USB detect flag polarity (assumed level, 1 = detected). All
+of this lives in `uartkbd_parse.c` only.
 
 **Dependencies:** none beyond `pico_stdlib` (`hardware_uart` comes with it).
 UART1 must stay free for this driver (UART0 is the OneWili/FwGUI link).
