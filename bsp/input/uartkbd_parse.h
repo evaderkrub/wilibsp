@@ -110,6 +110,11 @@ bool     uartkbd_parse_next_event(uartkbd_parser_t *p, uartkbd_event_t *ev);
 uint16_t uartkbd_parse_buttons(const uartkbd_parser_t *p);
 uint8_t  uartkbd_parse_flags(const uartkbd_parser_t *p);
 bool     uartkbd_parse_charger(const uartkbd_parser_t *p, uartkbd_charger_t *out);
+/* tspct (tenths of percent, from uartkbd_charger_t.temp_tspct) -> degrees C
+ * via the NTC divider math in Wilikeyboard.md. Returns -273.15f when tspct
+ * is outside the divider's physical range (check <= -100.0f). Uses logf —
+ * the only function here that pulls in libm. */
+float    uartkbd_charger_temp_c(uint16_t tspct);
 uint32_t uartkbd_parse_frames(const uartkbd_parser_t *p);
 uint32_t uartkbd_parse_errors(const uartkbd_parser_t *p);
 

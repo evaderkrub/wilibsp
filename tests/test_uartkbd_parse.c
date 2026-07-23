@@ -353,6 +353,19 @@ static void test_charger_bad_checksum_keeps_old_snapshot(void)
     CHECK(c.charge_status == UARTKBD_CHG_PRECHARGE);
 }
 
+static void test_charger_temp_c(void)
+{
+    /* Hand-computed via the doc's formula:
+     * tspct 589 -> R_low 7509 -> R_ntc ~10017 -> ~25.0 C
+     * tspct 675 -> R_low 10883 -> R_ntc ~17079 -> ~11.8 C */
+    ASSERT_NEAR(uartkbd_charger_temp_c(589), 25.0, 0.5);
+    ASSERT_NEAR(uartkbd_charger_temp_c(675), 11.8, 0.5);
+    /* out of physical range (R_low >= the 30k parallel leg, or x=0) */
+    CHECK(uartkbd_charger_temp_c(0) <= -100.0f);
+    CHECK(uartkbd_charger_temp_c(900) <= -100.0f);
+    CHECK(uartkbd_charger_temp_c(1000) <= -100.0f);
+}
+
 int main(void)
 {
     test_valid_frame_latches_buttons();
@@ -371,6 +384,7 @@ int main(void)
     test_charger_midpoint_scaling();
     test_charger_undocumented_code_passthrough();
     test_charger_bad_checksum_keeps_old_snapshot();
+    test_charger_temp_c();
     if (g_failures == 0) printf("test_uartkbd_parse: all passed\n");
     TEST_RETURN();
 }

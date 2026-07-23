@@ -1,5 +1,6 @@
 #include "uartkbd_parse.h"
 #include <string.h>
+#include <math.h>
 
 enum { ST_HUNT = 0, ST_SYNC2 = 1, ST_COLLECT = 2 };
 
@@ -138,4 +139,16 @@ bool uartkbd_parse_charger(const uartkbd_parser_t *p, uartkbd_charger_t *out)
     out->cc1_mv = (uint16_t)(r[10] * 8u);
     out->cc2_mv = (uint16_t)(r[11] * 8u);
     return true;
+}
+
+float uartkbd_charger_temp_c(uint16_t tspct)
+{
+    float x = (float)tspct / 1000.0f;
+    if (x <= 0.0f || x >= 1.0f) return -273.15f;
+    float r_low = 5240.0f * x / (1.0f - x);        /* divider's lower leg */
+    float inv = 1.0f / r_low - 1.0f / 30000.0f;    /* peel off 30k parallel */
+    if (inv <= 0.0f) return -273.15f;              /* NTC absent / open */
+    float r_ntc = 1.0f / inv;
+    float t_k = 1.0f / (1.0f / 298.15f + logf(r_ntc / 10000.0f) / 3435.0f);
+    return t_k - 273.15f;
 }

@@ -203,4 +203,5 @@ add_executable(test_uartkbd_parse
 target_include_directories(test_uartkbd_parse PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../bsp/input
     ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(test_uartkbd_parse m)
 add_test(NAME uartkbd_parse COMMAND test_uartkbd_parse)
