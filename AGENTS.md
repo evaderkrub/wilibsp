@@ -111,6 +111,7 @@ BSP was harvested from. They are also recorded in `docs/hardware/facts.md`.
    points at `bsp/boards`. Never override on the command line (repeats
    invariant 1 — it's the single most common way to break a fresh build).
 9. **No need to calibrate touch screen**. The touch screen is pre calibrated at the factory.
+10. **Audio Speaker** The speaker for first productionFreeWili 2 is 0.5 Watt. Please enforce this limit when using the speaker. Also, make sure to disable the audio driver when not in use.
 
 ## How to add a driver
 
